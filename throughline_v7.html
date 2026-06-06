@@ -299,6 +299,70 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 .cal-tog{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:4px 10px;border-radius:4px;border:none;background:transparent;color:var(--tx3);cursor:pointer;font-family:var(--mono);transition:all .15s}
 .cal-tog.active{background:var(--surface);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .cal-tog:hover:not(.active){color:var(--tx)}
+
+/* MY SPACE */
+.ms-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.ms-tabs{display:flex;gap:2px;padding:10px 20px 0;background:var(--surface);border-bottom:1px solid var(--bd);flex-shrink:0}
+.ms-tab{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:7px 16px;border-radius:6px 6px 0 0;border:none;background:transparent;color:var(--tx3);cursor:pointer;font-family:var(--font);transition:all .15s;border-bottom:2px solid transparent}
+.ms-tab:hover{color:var(--tx)}
+.ms-tab.active{color:var(--tx);border-bottom-color:var(--ip-fg)}
+.ms-panel{flex:1;overflow-y:auto;display:none;padding:20px}
+.ms-panel.active{display:block}
+/* TO-DO */
+.todo-wrap{max-width:680px;margin:0 auto}
+.todo-section{margin-bottom:24px}
+.todo-section-title{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);font-family:var(--mono);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.todo-section-title::after{content:'';flex:1;height:1px;background:var(--bd)}
+.todo-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;border:1px solid var(--bd);background:var(--surface);margin-bottom:6px;transition:all .15s;cursor:pointer}
+.todo-item:hover{border-color:var(--bd2);background:var(--hover)}
+.todo-item.overdue{border-color:rgba(192,80,80,.3);background:rgba(192,80,80,.04)}
+.todo-item.due-soon{border-color:rgba(201,168,76,.25);background:rgba(201,168,76,.04)}
+.todo-item.done{opacity:.45}
+.todo-item.done .todo-name{text-decoration:line-through}
+.todo-proj-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.todo-name{font-size:13px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.todo-meta{font-size:10px;color:var(--tx3);font-family:var(--mono);white-space:nowrap;flex-shrink:0}
+.todo-goto{font-size:10px;font-family:var(--mono);padding:3px 9px;border-radius:5px;border:1px solid var(--bd2);background:transparent;color:var(--tx2);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.todo-goto:hover{background:var(--hover);color:var(--tx);border-color:var(--bd3)}
+.todo-check{width:16px;height:16px;border-radius:4px;border:1px solid var(--bd2);background:transparent;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.todo-check:hover{border-color:var(--bd3)}
+.todo-check.checked{background:var(--cp-fg);border-color:var(--cp-fg)}
+.todo-check.checked::after{content:'✓';font-size:10px;color:#fff;font-weight:700}
+.todo-add-row{display:flex;gap:8px;margin-top:10px}
+.todo-add-row input{flex:1;padding:9px 12px;border-radius:7px;border:1px solid var(--bd2);background:var(--raised);color:var(--tx);font-size:13px;font-family:var(--font);outline:none}
+.todo-add-row input:focus{border-color:var(--bd3)}
+.todo-add-row button{padding:9px 16px;border-radius:7px;border:none;background:var(--tx);color:var(--inv);font-size:12px;font-weight:600;font-family:var(--font);cursor:pointer}
+/* NOTES */
+.notes-wrap{max-width:900px;margin:0 auto}
+.notes-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.notes-title{font-size:22px;font-weight:800;letter-spacing:.04em}
+.notes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.note-card{background:var(--surface);border:1px solid var(--bd2);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px;cursor:grab;position:relative;transition:border-color .15s,box-shadow .15s}
+.note-card:hover{border-color:var(--bd3);box-shadow:var(--sh)}
+.note-card.dragging{opacity:.5;cursor:grabbing}
+.note-card.drag-over-note{border-color:var(--ip-fg);border-style:dashed}
+.note-card-header{display:flex;align-items:center;gap:6px}
+.note-card-title{font-size:13px;font-weight:700;flex:1;border:none;background:transparent;color:var(--tx);font-family:var(--font);outline:none;padding:0}
+.note-card-title::placeholder{color:var(--tx3)}
+.note-fmt{display:flex;align-items:center;gap:3px}
+.note-fmt-btn{width:24px;height:24px;border-radius:4px;border:none;background:transparent;color:var(--tx3);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:serif}
+.note-fmt-btn:hover{background:var(--hover);color:var(--tx)}
+.note-fmt-btn.bold{font-weight:900}
+.note-fmt-btn.italic{font-style:italic}
+.note-color-dot{width:16px;height:16px;border-radius:50%;cursor:pointer;border:2px solid transparent;flex-shrink:0;transition:all .15s}
+.note-color-dot:hover{transform:scale(1.2)}
+.note-color-dot.active{border-color:var(--tx)}
+.note-body{flex:1;border:none;background:transparent;color:var(--tx2);font-family:var(--mono);font-size:12px;line-height:1.7;resize:none;outline:none;min-height:80px}
+.note-body::placeholder{color:var(--tx3)}
+.note-footer{display:flex;align-items:center;justify-content:space-between}
+.note-del{font-size:10px;font-family:var(--mono);color:var(--tx3);cursor:pointer;padding:3px 8px;border-radius:4px;border:1px solid transparent;background:transparent;transition:all .15s}
+.note-del:hover{color:var(--oh-fg);border-color:rgba(192,80,80,.3)}
+.note-drag-hint{font-size:9px;color:var(--tx3);font-family:var(--mono)}
+.note-add-card{background:transparent;border:1px dashed var(--bd2);border-radius:10px;padding:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;min-height:140px}
+.note-add-card:hover{border-color:var(--bd3);background:var(--hover)}
+.note-add-card span{font-size:12px;color:var(--tx3);font-family:var(--mono)}
+.note-color-picker{position:absolute;top:40px;right:12px;background:var(--surface);border:1px solid var(--bd3);border-radius:8px;padding:8px;display:flex;gap:6px;z-index:50;box-shadow:var(--sh)}
+.ms-empty{padding:48px;text-align:center;color:var(--tx3);font-family:var(--mono);font-size:13px;letter-spacing:.07em}
 .toast{position:fixed;bottom:20px;right:20px;background:var(--raised);border:1px solid var(--bd3);color:var(--tx);font-size:12px;font-weight:500;padding:10px 16px;border-radius:8px;z-index:300;opacity:0;transform:translateY(6px);transition:all .22s;pointer-events:none;font-family:var(--mono);letter-spacing:.04em;box-shadow:var(--sh)}
 .toast.show{opacity:1;transform:translateY(0)}
 @media(max-width:900px){.hdr,.toolbar,.legend{padding-left:12px;padding-right:12px}.jobs-scroll,.team-scroll,.cal-outer{padding:10px 12px}.tab{padding:5px 10px;font-size:11px}.period{min-width:110px;font-size:13px}}
@@ -342,6 +406,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
     <button class="tab" data-tab="calendar">Calendar</button>
     <button class="tab" data-tab="jobs">Jobs</button>
     <button class="tab" data-tab="team">Team</button>
+    <button class="tab" data-tab="myspace" id="myspace-tab">My Space</button>
   </div>
   <div class="hdr-r">
     <div class="save-dot" id="save-dot"></div>
@@ -428,6 +493,46 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
     <div class="tr"><button class="btn btn-primary" id="team-add"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add member</span></button></div>
   </div>
   <div class="team-scroll"><div class="team-grid" id="team-grid"></div></div>
+</div>
+
+<!-- MY SPACE -->
+<div class="view" id="view-myspace">
+  <div class="ms-wrap">
+    <div class="ms-tabs">
+      <button class="ms-tab active" data-mstab="todo">My To-Do</button>
+      <button class="ms-tab" data-mstab="timeline">My Timeline</button>
+      <button class="ms-tab" data-mstab="calendar">My Calendar</button>
+      <button class="ms-tab" data-mstab="notes">Notes</button>
+    </div>
+    <div class="ms-panel active" id="ms-todo">
+      <div class="todo-wrap">
+        <div id="todo-assigned"></div>
+        <div class="todo-section">
+          <div class="todo-section-title">Personal tasks</div>
+          <div id="todo-personal"></div>
+          <div class="todo-add-row">
+            <input id="todo-new-input" placeholder="Add a personal task...">
+            <button id="todo-new-btn">+ Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ms-panel" id="ms-timeline">
+      <div id="ms-tl-inner" style="overflow-x:auto"></div>
+    </div>
+    <div class="ms-panel" id="ms-calendar">
+      <div id="ms-cal-inner" style="display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--bd2);border-radius:10px;overflow:hidden;background:var(--surface)"></div>
+    </div>
+    <div class="ms-panel" id="ms-notes">
+      <div class="notes-wrap">
+        <div class="notes-header">
+          <div class="notes-title">My Notes</div>
+          <button class="btn btn-primary" id="note-add-btn"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> New note</button>
+        </div>
+        <div class="notes-grid" id="notes-grid"></div>
+      </div>
+    </div>
+  </div>
 </div>
 </div>
 <div id="mc"></div>
@@ -565,8 +670,10 @@ document.getElementById('cal-zi').addEventListener('click',()=>{if(calZoomIdx<CA
 document.getElementById('cal-zo').addEventListener('click',()=>{if(calZoomIdx>0){calZoomIdx--;updateZL();save();renderCalendar();}});
 document.getElementById('cal-zr').addEventListener('click',()=>{calZoomIdx=CAL_DEF;updateZL();save();renderCalendar();});
 // TABS
-document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',()=>{activeTab=t.dataset.tab;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');['timeline','calendar','jobs','team'].forEach(id=>document.getElementById('view-'+id).classList.toggle('active',id===activeTab));renderAll();});});
-function renderAll(){document.getElementById('tl-month').textContent=MN[vm]+' '+vy;document.getElementById('cal-month').textContent=MN[vm]+' '+vy;populateFilters();renderTimeline();renderCalendar();renderJobs();renderTeam();}
+document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',()=>{activeTab=t.dataset.tab;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');['timeline','calendar','jobs','team','myspace'].forEach(id=>document.getElementById('view-'+id).classList.toggle('active',id===activeTab));if(activeTab==='myspace')renderMySpace();else renderAll();});});
+// My Space sub-tabs
+document.querySelectorAll('.ms-tab').forEach(t=>{t.addEventListener('click',()=>{document.querySelectorAll('.ms-tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.querySelectorAll('.ms-panel').forEach(p=>p.classList.remove('active'));document.getElementById('ms-'+t.dataset.mstab).classList.add('active');renderMySpace();});});
+function renderAll(){document.getElementById('tl-month').textContent=MN[vm]+' '+vy;document.getElementById('cal-month').textContent=MN[vm]+' '+vy;populateFilters();renderTimeline();renderCalendar();renderJobs();renderTeam();if(activeTab==='myspace')renderMySpace();}
 // ALERTS
 function buildAlerts(){
   if(alertDis)return;
@@ -752,7 +859,7 @@ function updateBar(item,rid,days){
 function jumpTo(type,id){
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   document.querySelector('[data-tab="jobs"]').classList.add('active');
-  ['timeline','calendar','jobs','team'].forEach(v=>document.getElementById('view-'+v).classList.toggle('active',v==='jobs'));
+  ['timeline','calendar','jobs','team','myspace'].forEach(v=>document.getElementById('view-'+v).classList.toggle('active',v==='jobs'));
   activeTab='jobs';
   const targetPid=type==='job'?(jobs.find(j=>j.id===id)?.pid):id;
   if(targetPid)collapsed['p-'+targetPid]=false;
@@ -1135,6 +1242,15 @@ auth.onAuthStateChanged(async (user) => {
 
   // Load data from Firestore (real-time)
   startRealtimeSync();
+
+  // Load private workspace data
+  await loadMyData();
+
+  // Set linked member from user doc
+  const freshDoc = await db.collection('users').doc(user.uid).get();
+  if (freshDoc.exists) {
+    currentUserLinkedMember = freshDoc.data().linkedMember || null;
+  }
 });
 
 function updateUserHeader() {
@@ -1401,6 +1517,9 @@ function applyRoleUI() {
     }
   }
   if (adminBtn) adminBtn.style.display = isAdmin ? '' : 'none';
+  // Show My Space tab now that user is authenticated
+  const msTab = document.getElementById('myspace-tab');
+  if (msTab) msTab.style.display = '';
 }
 
 // Handle pending users on auth — second listener just for pending check
@@ -1429,6 +1548,289 @@ document.getElementById('theme-btn').addEventListener('click', () => {
   applyTheme(!isDark);
   try { localStorage.setItem('tl-theme-v7', isDark ? 'dark' : 'light'); } catch(e) {}
 });
+</script>
+</body>
+</html>
+<script>
+// ═══ MY SPACE ═══
+const NOTE_COLORS=['#1e1e1e','#1a2a1a','#1a1a2a','#2a1a00','#2a001a','#001a2a'];
+const NOTE_COLORS_LIGHT=['#f5f3f0','#edf5ed','#edeef5','#fdf5e6','#fdedf5','#e6f5fd'];
+
+let myTodos=[];   // personal tasks: {id,text,done}
+let myNotes=[];   // notes: {id,title,body,color,order}
+let msActivePanel='todo';
+
+function getLinkedMember(){
+  if(!currentUser)return null;
+  // Find member linked to current user
+  return members.find(m=>m.name===currentUserLinkedMember)||null;
+}
+let currentUserLinkedMember=null; // set after auth
+
+function renderMySpace(){
+  const panel=document.querySelector('.ms-panel.active');
+  if(!panel)return;
+  const pid=panel.id.replace('ms-','');
+  if(pid==='todo')renderMyTodo();
+  else if(pid==='timeline')renderMyTimeline();
+  else if(pid==='calendar')renderMyCalendar();
+  else if(pid==='notes')renderMyNotes();
+}
+
+// ── MY TO-DO ──
+function renderMyTodo(){
+  const now=now_();
+  // Assigned jobs
+  const myName=currentUserLinkedMember;
+  const myJobs=myName?jobs.filter(j=>(j.assignees||[]).includes(myName)&&j.status!=='Completed'):[];
+  myJobs.sort((a,b)=>{
+    if(!a.end&&!b.end)return 0;if(!a.end)return 1;if(!b.end)return -1;return a.end-b.end;
+  });
+
+  let h='';
+  if(myJobs.length){
+    h+=`<div class="todo-section"><div class="todo-section-title">Assigned jobs (${myJobs.length})</div>`;
+    myJobs.forEach(j=>{
+      const p=projects.find(x=>x.id===j.pid);
+      const diff=j.end?Math.ceil((j.end-now)/864e5):null;
+      const isOver=diff!==null&&diff<0&&j.status!=='Completed';
+      const isSoon=diff!==null&&diff>=0&&diff<=3;
+      h+=`<div class="todo-item${isOver?' overdue':isSoon?' due-soon':''}">
+        <div class="todo-proj-dot" style="background:${p?.color||'#666'}"></div>
+        <div style="flex:1;min-width:0">
+          <div class="todo-name">${j.name}</div>
+          <div style="font-size:10px;color:var(--tx3);font-family:var(--mono);margin-top:2px">${p?.name||''}${j.end?` · ${isOver?'Overdue':'Due '+fl(j.end)}':' · TBD'}</div>
+        </div>
+        ${j.priority!=='Normal'?prioBadge(j.priority):''}
+        ${pill(j.status)}
+        <button class="todo-goto" data-jid="${j.id}">→ Go to job</button>
+      </div>`;
+    });
+    h+=`</div>`;
+  } else {
+    h+=`<div class="todo-section"><div class="todo-section-title">Assigned jobs</div><div class="ms-empty" style="padding:24px">No active jobs assigned to you</div></div>`;
+  }
+  document.getElementById('todo-assigned').innerHTML=h;
+
+  // Personal tasks
+  let ph='';
+  myTodos.forEach((t,i)=>{
+    ph+=`<div class="todo-item${t.done?' done':''}">
+      <div class="todo-check${t.done?' checked':''}" data-tidx="${i}"></div>
+      <div class="todo-name">${t.text}</div>
+      <button class="todo-del-btn" data-tidx="${i}" style="font-size:11px;color:var(--tx3);border:none;background:transparent;cursor:pointer;padding:4px 6px;border-radius:4px;flex-shrink:0" title="Delete">✕</button>
+    </div>`;
+  });
+  document.getElementById('todo-personal').innerHTML=ph;
+
+  // Attach handlers
+  document.querySelectorAll('.todo-goto').forEach(btn=>{
+    btn.addEventListener('click',e=>{e.stopPropagation();jumpTo('job',+btn.dataset.jid);});
+  });
+  document.querySelectorAll('.todo-check').forEach(el=>{
+    el.addEventListener('click',()=>{const i=+el.dataset.tidx;myTodos[i].done=!myTodos[i].done;saveMyData();renderMyTodo();});
+  });
+  document.querySelectorAll('.todo-del-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{e.stopPropagation();myTodos.splice(+btn.dataset.tidx,1);saveMyData();renderMyTodo();});
+  });
+
+  // Add task
+  const addBtn=document.getElementById('todo-new-btn');
+  const addInp=document.getElementById('todo-new-input');
+  if(addBtn&&addInp){
+    addBtn.onclick=()=>{
+      const txt=addInp.value.trim();
+      if(!txt)return;
+      myTodos.push({id:Date.now(),text:txt,done:false});
+      addInp.value='';
+      saveMyData();renderMyTodo();
+    };
+    addInp.onkeydown=e=>{if(e.key==='Enter')addBtn.click();};
+  }
+}
+
+// ── MY TIMELINE ──
+function renderMyTimeline(){
+  const myName=currentUserLinkedMember;
+  const myJobs=myName?jobs.filter(j=>(j.assignees||[]).includes(myName)):[];
+  const el=document.getElementById('ms-tl-inner');
+  if(!myJobs.length){el.innerHTML=`<div class="ms-empty">No jobs assigned to you</div>`;return;}
+  // Reuse timeline but filter to my jobs only — simple list view
+  const now=now_(),days=dim(vy,vm),D=dw();
+  const tm=(now.getFullYear()===vy&&now.getMonth()===vm)?now.getDate():null;
+  let h=`<div style="display:inline-block;min-width:100%">`;
+  h+=`<div class="tl-hdr-row"><div class="tl-lbl-hdr" style="width:${LW}px">My Jobs</div><div class="tl-days-hdr">`;
+  for(let d=1;d<=days;d++){const w=dow(vy,vm,d),isW=w===0||w===6,isT=d===tm;h+=`<div class="tl-dh${isW?' wkh':''}" style="width:${D}px"><div class="tl-dn">${DNS[w]}</div><div class="tl-dd${isT?' tc':''}">${d}</div></div>`;}
+  h+=`</div></div>`;
+  myJobs.forEach(j=>{
+    const p=projects.find(x=>x.id===j.pid);
+    const jcol=sc(j.status);
+    h+=`<div class="job-tl-row"><div class="job-lbl" style="width:${LW}px">
+      <div class="job-dot" style="background:${p?.color||jcol}"></div>
+      <div style="overflow:hidden;min-width:0;flex:1">
+        <div class="job-lbl-name">${j.name}</div>
+        <div style="font-size:9px;color:var(--tx3);font-family:var(--mono)">${p?.name||''}</div>
+      </div>${prioBadge(j.priority)}
+    </div>`;
+    h+=`<div style="flex:1;position:relative;display:flex;overflow:hidden;width:${days*D}px">`;
+    for(let d=1;d<=days;d++){const w=dow(vy,vm,d),isW=w===0||w===6,isT=d===tm;h+=`<div class="tl-c${isW?' wk':''}${isT?' tdc':''}" style="width:${D}px;min-height:36px"></div>`;}
+    const bj=barSpan(j.start,j.end,days);
+    if(bj)h+=`<div class="bar job-bar" style="left:${bj.l}px;width:${bj.w}px;background:${jcol}"><span style="overflow:hidden;text-overflow:ellipsis;flex:1;padding-left:2px">${j.name}</span></div>`;
+    if(tm)h+=`<div class="tl-today-line" style="left:${(tm-.5)*D}px"></div>`;
+    h+=`</div></div>`;
+  });
+  h+=`</div>`;
+  el.innerHTML=h;
+}
+
+// ── MY CALENDAR ──
+function renderMyCalendar(){
+  const myName=currentUserLinkedMember;
+  const days=dim(vy,vm),first=dow(vy,vm,1),now=now_();
+  const el=document.getElementById('ms-cal-inner');
+  let h=DN7.map((d,i)=>`<div class="cal-dh${i===0||i===6?' wkh':''}">${d}</div>`).join('');
+  let cellDay=1-first;
+  for(let cell=0;cell<42;cell++){
+    const d=cellDay,inM=d>=1&&d<=days;
+    const dt=inM?toLocal(vy,vm,d):null;
+    const isT=dt&&sameDay(dt,now);
+    const w=cell%7,isW=w===0||w===6;
+    h+=`<div class="cal-cell${!inM?' other':''}${isT?' today':''}${isW&&inM?' wknd':''}" style="min-height:80px">`;
+    if(inM&&dt){
+      h+=`<div class="cal-num${isT?' tn':''}">${d}</div>`;
+      // My jobs only
+      if(myName)jobs.filter(j=>(j.assignees||[]).includes(myName)&&dateInRange(dt,j.start,j.end)).forEach(j=>{
+        const p=projects.find(x=>x.id===j.pid);
+        h+=`<div class="cal-bar jcb" style="background:${p?.color||sc(j.status)}">${j.name}</div>`;
+      });
+      // My events
+      events.filter(ev=>(ev.members||[]).includes(myName)&&dateInRange(dt,ev.start,ev.end||ev.start)).forEach(ev=>{
+        const etc=EVENT_TYPES[ev.type]||EVENT_TYPES['Other'];
+        h+=`<div class="cal-event" style="background:${etc.color}22;color:${etc.color};border-left-color:${etc.color}">${etc.icon} ${ev.name}</div>`;
+      });
+    }
+    h+=`</div>`;
+    cellDay++;
+  }
+  el.innerHTML=h;
+}
+
+// ── NOTES ──
+function renderMyNotes(){
+  const grid=document.getElementById('notes-grid');if(!grid)return;
+  const dark=isDark;
+  let h=myNotes.map((n,i)=>`
+    <div class="note-card" data-nidx="${i}" draggable="true" style="background:${dark?n.color||'#1e1e1e':NOTE_COLORS_LIGHT[NOTE_COLORS.indexOf(n.color)]||'#f5f3f0'}">
+      <div class="note-card-header">
+        <input class="note-card-title" data-nidx="${i}" placeholder="Title..." value="${(n.title||'').replace(/"/g,'&quot;')}">
+        <div class="note-fmt">
+          <button class="note-fmt-btn bold" data-fmt="bold" title="Bold">B</button>
+          <button class="note-fmt-btn italic" data-fmt="italic" title="Italic">I</button>
+          <button class="note-fmt-btn" data-fmt="underline" title="Underline" style="text-decoration:underline">U</button>
+          <div class="note-color-dot${n.color===NOTE_COLORS[0]||!n.color?' active':''}" data-nidx="${i}" style="background:#4b4b4b" data-color="${NOTE_COLORS[0]}"></div>
+          <div class="note-color-dot${n.color===NOTE_COLORS[1]?' active':''}" data-nidx="${i}" style="background:#2d4a2d" data-color="${NOTE_COLORS[1]}"></div>
+          <div class="note-color-dot${n.color===NOTE_COLORS[2]?' active':''}" data-nidx="${i}" style="background:#2d2d4a" data-color="${NOTE_COLORS[2]}"></div>
+          <div class="note-color-dot${n.color===NOTE_COLORS[3]?' active':''}" data-nidx="${i}" style="background:#4a3500" data-color="${NOTE_COLORS[3]}"></div>
+          <div class="note-color-dot${n.color===NOTE_COLORS[4]?' active':''}" data-nidx="${i}" style="background:#4a002d" data-color="${NOTE_COLORS[4]}"></div>
+          <div class="note-color-dot${n.color===NOTE_COLORS[5]?' active':''}" data-nidx="${i}" style="background:#003566" data-color="${NOTE_COLORS[5]}"></div>
+        </div>
+      </div>
+      <textarea class="note-body" data-nidx="${i}" placeholder="Write something...">${n.body||''}</textarea>
+      <div class="note-footer">
+        <button class="note-del" data-nidx="${i}">Delete</button>
+        <span class="note-drag-hint">⠿ drag to reorder</span>
+      </div>
+    </div>`).join('');
+  h+=`<div class="note-add-card" id="note-add-card"><span>+ New note</span></div>`;
+  grid.innerHTML=h;
+
+  // Title autosave
+  grid.querySelectorAll('.note-card-title').forEach(inp=>{
+    inp.addEventListener('input',()=>{const i=+inp.dataset.nidx;myNotes[i].title=inp.value;saveMyData();});
+  });
+  // Body autosave + formatting
+  grid.querySelectorAll('.note-body').forEach(ta=>{
+    ta.addEventListener('input',()=>{const i=+ta.dataset.nidx;myNotes[i].body=ta.value;saveMyData();});
+  });
+  // Format buttons
+  grid.querySelectorAll('.note-fmt-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const card=btn.closest('.note-card');
+      const ta=card.querySelector('.note-body');
+      const fmt=btn.dataset.fmt;
+      const start=ta.selectionStart,end=ta.selectionEnd;
+      const sel=ta.value.substring(start,end);
+      if(!sel)return;
+      const tags={bold:['**','**'],italic:['_','_'],underline:['__','__']};
+      const[o,c]=tags[fmt]||['',''];
+      ta.value=ta.value.substring(0,start)+o+sel+c+ta.value.substring(end);
+      ta.selectionStart=start;ta.selectionEnd=end+o.length+c.length;
+      const i=+ta.dataset.nidx;myNotes[i].body=ta.value;saveMyData();
+    });
+  });
+  // Color dots
+  grid.querySelectorAll('.note-color-dot').forEach(dot=>{
+    dot.addEventListener('click',e=>{
+      e.stopPropagation();
+      const i=+dot.dataset.nidx;
+      myNotes[i].color=dot.dataset.color;
+      saveMyData();renderMyNotes();
+    });
+  });
+  // Delete
+  grid.querySelectorAll('.note-del').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      if(confirm('Delete this note?')){myNotes.splice(+btn.dataset.nidx,1);saveMyData();renderMyNotes();}
+    });
+  });
+  // Add new note
+  document.getElementById('note-add-card')?.addEventListener('click',()=>{
+    myNotes.unshift({id:Date.now(),title:'',body:'',color:NOTE_COLORS[0],order:0});
+    saveMyData();renderMyNotes();
+    // Focus title of first card
+    setTimeout(()=>document.querySelector('.note-card-title')?.focus(),50);
+  });
+  document.getElementById('note-add-btn')?.addEventListener('click',()=>{
+    myNotes.unshift({id:Date.now(),title:'',body:'',color:NOTE_COLORS[0],order:0});
+    saveMyData();renderMyNotes();
+    setTimeout(()=>document.querySelector('.note-card-title')?.focus(),50);
+  });
+  // Drag to reorder notes
+  let dragNoteIdx=null;
+  grid.querySelectorAll('.note-card[draggable]').forEach(card=>{
+    card.addEventListener('dragstart',e=>{dragNoteIdx=+card.dataset.nidx;card.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+    card.addEventListener('dragend',()=>{card.classList.remove('dragging');grid.querySelectorAll('.drag-over-note').forEach(c=>c.classList.remove('drag-over-note'));});
+    card.addEventListener('dragover',e=>{e.preventDefault();if(+card.dataset.nidx!==dragNoteIdx)card.classList.add('drag-over-note');});
+    card.addEventListener('dragleave',()=>card.classList.remove('drag-over-note'));
+    card.addEventListener('drop',e=>{
+      e.preventDefault();card.classList.remove('drag-over-note');
+      const toIdx=+card.dataset.nidx;if(toIdx===dragNoteIdx)return;
+      const[moved]=myNotes.splice(dragNoteIdx,1);myNotes.splice(toIdx,0,moved);
+      saveMyData();renderMyNotes();
+    });
+  });
+}
+
+// ── SAVE/LOAD PRIVATE DATA ──
+async function saveMyData(){
+  if(!currentUser)return;
+  try{
+    await db.collection('private').doc(currentUser.uid).set({todos:myTodos,notes:myNotes,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+  }catch(e){console.error('Private save error:',e);}
+}
+async function loadMyData(){
+  if(!currentUser)return;
+  try{
+    const doc=await db.collection('private').doc(currentUser.uid).get();
+    if(doc.exists){const d=doc.data();myTodos=d.todos||[];myNotes=d.notes||[];}
+    else{myTodos=[];myNotes=[];}
+  }catch(e){myTodos=[];myNotes=[];}
+}
+
+// Update tab visibility for My Space
+document.getElementById('myspace-tab').style.display='none'; // hidden until logged in
 </script>
 </body>
 </html>

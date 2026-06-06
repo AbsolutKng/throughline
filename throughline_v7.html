@@ -1223,14 +1223,23 @@ function save() {
   saveToFirestore();
 }
 
-// ═══ ADMIN PANEL — accessible from Team tab ═══
+// ═══ ADMIN PANEL ═══
 function openAdminPanel() {
-  db.collection('users').get().then(snap => {
-    const users = snap.docs.map(d => ({id: d.id, ...d.data()}));
-    const rows = users.map(u => `
-      <div style="display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--bd)">
+  Promise.all([
+    db.collection('users').get(),
+    db.collection('pending_users').get()
+  ]).then(([userSnap, pendingSnap]) => {
+    const users = userSnap.docs.map(d => ({id: d.id, ...d.data()}));
+    const pending = pendingSnap.docs.map(d => ({id: d.id, ...d.data()}));
+    const memberOpts = members.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+
+    const activeRows = users.map(u => `
+      <div style="display:grid;grid-template-columns:1fr 110px 100px 70px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--bd)">
         <div>
-          <div style="font-size:13px;font-weight:600">${u.name||u.email}</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="font-size:13px;font-weight:600">${u.linkedMember||u.name||u.email}</div>
+            ${u.linkedMember?`<span style="font-size:9px;font-family:var(--mono);padding:1px 6px;border-radius:3px;background:var(--cp);color:var(--cp-fg)">linked</span>`:''}
+          </div>
           <div style="font-size:10px;color:var(--tx3);font-family:var(--mono)">${u.email}</div>
         </div>
         <select data-uid="${u.id}" class="role-sel" style="font-size:11px;padding:4px 8px;border-radius:5px;border:1px solid var(--bd2);background:var(--raised);color:var(--tx);font-family:var(--mono)">
@@ -1238,28 +1247,68 @@ function openAdminPanel() {
           <option value="editor"${u.role==='editor'?' selected':''}>Editor</option>
           <option value="viewer"${u.role==='viewer'?' selected':''}>Viewer</option>
         </select>
-        ${u.email !== currentUser.email ? `<button data-uid="${u.id}" class="remove-user-btn" style="padding:4px 8px;font-size:10px;font-family:var(--mono);color:var(--oh-fg);border:1px solid rgba(192,80,80,.3);border-radius:5px;background:transparent;cursor:pointer">Remove</button>` : '<div style="width:60px"></div>'}
+        <select data-uid="${u.id}" class="link-sel" style="font-size:11px;padding:4px 8px;border-radius:5px;border:1px solid var(--bd2);background:var(--raised);color:var(--tx);font-family:var(--mono)">
+          <option value="">No link</option>
+          ${memberOpts}
+        </select>
+        ${u.email !== currentUser.email ? `<button data-uid="${u.id}" class="remove-user-btn" style="padding:4px 8px;font-size:10px;font-family:var(--mono);color:var(--oh-fg);border:1px solid rgba(192,80,80,.3);border-radius:5px;background:transparent;cursor:pointer">Remove</button>` : '<div></div>'}
       </div>`).join('');
 
-    showModal(`<div class="modal-title">Team Access</div>
-      <div style="margin-bottom:16px;font-size:11px;color:var(--tx3);font-family:var(--mono)">Manage who can access Throughline and their role.</div>
-      <div id="users-list">${rows}</div>
+    const pendingRows = pending.length ? `
       <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--bd)">
-        <div style="font-size:11px;font-weight:600;margin-bottom:8px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--tx3)">Add new member</div>
-        <div style="display:flex;gap:8px">
-          <input id="new-user-email" placeholder="email@gmail.com" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--bd2);background:var(--raised);color:var(--tx);font-size:12px;font-family:var(--mono);outline:none">
+        <div style="font-size:11px;font-weight:600;margin-bottom:8px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--rv-fg)">⏳ Pending — not signed in yet</div>
+        ${pending.map(p => `
+          <div style="display:grid;grid-template-columns:1fr 80px 80px 60px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd)">
+            <div>
+              <div style="font-size:12px;font-weight:600;font-family:var(--mono)">${p.email}</div>
+              <div style="font-size:10px;color:var(--tx3);font-family:var(--mono)">Linked to: ${p.linkedMember||'—'}</div>
+            </div>
+            <span style="font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:3px;background:var(--rv);color:var(--rv-fg)">${p.role}</span>
+            <span style="font-size:10px;color:var(--tx3);font-family:var(--mono)">${p.linkedMember||'—'}</span>
+            <button data-pid="${p.id}" class="cancel-pending-btn" style="padding:4px 8px;font-size:10px;font-family:var(--mono);color:var(--oh-fg);border:1px solid rgba(192,80,80,.3);border-radius:5px;background:transparent;cursor:pointer">Cancel</button>
+          </div>`).join('')}
+      </div>` : '';
+
+    showModal(`<div class="modal-title">Team Access</div>
+      <div style="margin-bottom:12px;font-size:11px;color:var(--tx3);font-family:var(--mono)">Manage who can access Throughline, their role, and which team member they are.</div>
+      <div style="display:grid;grid-template-columns:1fr 110px 100px 70px;gap:8px;padding-bottom:6px;border-bottom:1px solid var(--bd2)">
+        <div style="font-size:9px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--tx3)">User</div>
+        <div style="font-size:9px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--tx3)">Role</div>
+        <div style="font-size:9px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--tx3)">Team member</div>
+        <div></div>
+      </div>
+      <div id="users-list">${activeRows}</div>
+      ${pendingRows}
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--bd)">
+        <div style="font-size:11px;font-weight:600;margin-bottom:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--tx3)">Invite new user</div>
+        <div style="display:grid;grid-template-columns:1fr 100px 110px auto;gap:8px;align-items:center">
+          <input id="new-user-email" placeholder="email@gmail.com" style="padding:8px 12px;border-radius:6px;border:1px solid var(--bd2);background:var(--raised);color:var(--tx);font-size:12px;font-family:var(--mono);outline:none">
           <select id="new-user-role" style="padding:8px 10px;border-radius:6px;border:1px solid var(--bd2);background:var(--raised);color:var(--tx);font-size:12px;font-family:var(--mono)">
             <option value="editor">Editor</option>
             <option value="viewer">Viewer</option>
             <option value="admin">Admin</option>
           </select>
-          <button id="add-user-btn" style="padding:8px 14px;border-radius:6px;background:var(--tx);color:var(--inv);border:none;font-size:11px;font-weight:600;font-family:var(--mono);cursor:pointer">Add</button>
+          <select id="new-user-member" style="padding:8px 10px;border-radius:6px;border:1px solid var(--bd2);background:var(--raised);color:var(--tx);font-size:12px;font-family:var(--mono)">
+            <option value="">No link</option>
+            ${memberOpts}
+          </select>
+          <button id="add-user-btn" style="padding:8px 14px;border-radius:6px;background:var(--tx);color:var(--inv);border:none;font-size:11px;font-weight:600;font-family:var(--mono);cursor:pointer;white-space:nowrap">+ Invite</button>
         </div>
-        <div style="font-size:10px;color:var(--tx3);font-family:var(--mono);margin-top:6px">They'll be able to sign in with this Google account on their next visit.</div>
+        <div style="font-size:10px;color:var(--tx3);font-family:var(--mono);margin-top:6px">Only this exact Gmail address will be allowed in. Link them to their team member profile so the app knows who they are.</div>
       </div>
       <div class="mactions"><button class="btn" id="mc2">Close</button></div>`, () => {
 
       document.getElementById('mc2').addEventListener('click', closeModal);
+
+      // Set current link values
+      document.querySelectorAll('.link-sel').forEach(sel => {
+        const u = users.find(u => u.id === sel.dataset.uid);
+        if (u && u.linkedMember) sel.value = u.linkedMember;
+        sel.addEventListener('change', async () => {
+          await db.collection('users').doc(sel.dataset.uid).update({ linkedMember: sel.value || null });
+          toast('Team member linked');
+        });
+      });
 
       // Role change
       document.querySelectorAll('.role-sel').forEach(sel => {
@@ -1269,7 +1318,7 @@ function openAdminPanel() {
         });
       });
 
-      // Remove user
+      // Remove active user
       document.querySelectorAll('.remove-user-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
           if(confirm('Remove this user? They will lose access immediately.')) {
@@ -1280,14 +1329,30 @@ function openAdminPanel() {
         });
       });
 
-      // Add user
+      // Cancel pending
+      document.querySelectorAll('.cancel-pending-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          await db.collection('pending_users').doc(btn.dataset.pid).delete();
+          toast('Invitation cancelled');
+          closeModal();
+        });
+      });
+
+      // Add / invite user
       document.getElementById('add-user-btn').addEventListener('click', async () => {
-        const email = document.getElementById('new-user-email').value.trim();
+        const email = document.getElementById('new-user-email').value.trim().toLowerCase();
         const role = document.getElementById('new-user-role').value;
+        const linkedMember = document.getElementById('new-user-member').value;
         if (!email || !email.includes('@')) { toast('Enter a valid email'); return; }
-        // Store as pending — they'll be assigned their UID on first login
-        await db.collection('pending_users').doc(email).set({ email, role, addedBy: currentUser.email, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
-        toast(`${email} added — they can now sign in`);
+        // Check not already active
+        const existing = users.find(u => u.email.toLowerCase() === email);
+        if (existing) { toast('This email already has access'); return; }
+        await db.collection('pending_users').doc(email).set({
+          email, role, linkedMember: linkedMember || null,
+          addedBy: currentUser.email,
+          addedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        toast(`Invite sent to ${email}`);
         document.getElementById('new-user-email').value = '';
         closeModal();
       });
@@ -1324,20 +1389,23 @@ function applyRoleUI() {
   if (adminBtn) adminBtn.style.display = isAdmin ? '' : 'none';
 }
 
-// Also handle pending users on auth
+// Handle pending users on auth — second listener just for pending check
 auth.onAuthStateChanged(async (user) => {
   if (!user) return;
-  // Check pending users list
-  const pendingDoc = await db.collection('pending_users').doc(user.email).get();
-  if (pendingDoc.exists && !(await db.collection('users').doc(user.uid).get()).exists) {
-    const pendingData = pendingDoc.data();
+  const userDoc = await db.collection('users').doc(user.uid).get();
+  if (userDoc.exists) return; // already registered, main listener handles it
+  // Check pending list (keyed by email)
+  const pendingDoc = await db.collection('pending_users').doc(user.email.toLowerCase()).get();
+  if (pendingDoc.exists) {
+    const pd = pendingDoc.data();
     await db.collection('users').doc(user.uid).set({
       email: user.email,
       name: user.displayName || user.email,
-      role: pendingData.role || 'viewer',
+      role: pd.role || 'viewer',
+      linkedMember: pd.linkedMember || null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    await db.collection('pending_users').doc(user.email).delete();
+    await db.collection('pending_users').doc(user.email.toLowerCase()).delete();
   }
 }, (error) => {});
 

@@ -533,7 +533,7 @@ const auth=firebase.auth();
 const db=firebase.firestore();
 const provider=new firebase.auth.GoogleAuthProvider();
 let currentUser=null,currentRole='viewer',currentUserLinkedMember=null,unsubscribeData=null;
-let myTodos=[],myNotes=[],msActiveOnly=false,msZoomIdx=TL_DEF,msCZoomIdx=CAL_DEF;
+let myTodos=[],myNotes=[],msActiveOnly=false,msZoomIdx=3,msCZoomIdx=2;
 const SK='throughline-v6-local';
 const LW=175;
 // FIX: Pixel-based zoom levels — each step has explicit px-per-day

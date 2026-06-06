@@ -1028,8 +1028,6 @@ function renderTeam(){
 }
 // MODALS
 // CLIENT/BRAND CASCADE
-const CP_BRANDS=['Colgate','Man Speed Stick (MSS)','Lady Speed Stick (LSS)','Palmolive','Fabuloso','Suavitel','Ajax','Axion','Protex','Neutro Balance','Other'];
-const CLIENT_BRANDS={'Colgate-Palmolive':CP_BRANDS,'Other':['Other']};
 function clientBrandHTML(selCl,selBr){
   const clOpts=['Colgate-Palmolive','Other'].map(c=>`<option${c===selCl?' selected':''}>${c}</option>`).join('');
   const brands=CLIENT_BRANDS[selCl]||CP_BRANDS;

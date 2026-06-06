@@ -302,8 +302,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 .note-card.drag-over-note{border:2px dashed var(--ip-fg)}
 .note-card-title{font-size:13px;font-weight:700;border:none;background:transparent;color:var(--tx);font-family:var(--font);outline:none;padding:0;width:100%}
 .note-card-title::placeholder{color:var(--tx3)}
-.note-fmt-btn{width:24px;height:24px;border-radius:4px;border:none;background:transparent;color:var(--tx3);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.note-fmt-btn:hover{background:var(--hover);color:var(--tx)}
+
 .note-color-dot{width:14px;height:14px;border-radius:50%;cursor:pointer;border:2px solid transparent;flex-shrink:0;transition:all .15s;display:inline-block}
 .note-color-dot:hover{transform:scale(1.2)}
 .note-color-dot.active{border-color:var(--tx)}
@@ -311,8 +310,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 .note-body::placeholder{color:var(--tx3)}
 .note-del{font-size:10px;font-family:var(--mono);color:var(--tx3);cursor:pointer;padding:3px 8px;border-radius:4px;border:1px solid transparent;background:transparent;transition:all .15s}
 .note-del:hover{color:var(--oh-fg);border-color:rgba(192,80,80,.3)}
-.todo-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;border:1px solid var(--bd);background:var(--surface);margin-bottom:6px;transition:all .15s}
+.todo-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;border:1px solid var(--bd);background:var(--surface);margin-bottom:6px;transition:all .15s;user-select:none}
 .todo-item:hover{border-color:var(--bd2)}
+.todo-item:active{background:var(--surface)}
 .todo-item.overdue{border-color:rgba(192,80,80,.3);background:rgba(192,80,80,.04)}
 .todo-item.due-soon{border-color:rgba(201,168,76,.25);background:rgba(201,168,76,.04)}
 .todo-item.done{opacity:.45}
@@ -461,6 +461,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 <div class="view" id="view-myspace">
   <div style="display:flex;flex-direction:column;flex:1;overflow:hidden">
     <div style="display:flex;gap:2px;padding:10px 20px 0;background:var(--surface);border-bottom:1px solid var(--bd);flex-shrink:0">
+      <div style="display:flex;align-items:center;gap:6px;margin-right:8px">
+        <button onclick="vm--;if(vm<0){vm=11;vy--;}save();renderMySpace();" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--bd2);background:transparent;color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s">‹</button>
+        <span id="ms-month-lbl" style="font-size:13px;font-weight:700;min-width:110px;text-align:center"></span>
+        <button onclick="vm++;if(vm>11){vm=0;vy++;}save();renderMySpace();" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--bd2);background:transparent;color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s">›</button>
+      </div>
       <button id="ms-active-btn" onclick="msActiveOnly=!msActiveOnly;this.style.background=msActiveOnly?'var(--ip)':'transparent';this.style.color=msActiveOnly?'var(--ip-fg)':'var(--tx3)';this.style.borderColor=msActiveOnly?'rgba(91,141,238,.3)':'var(--bd2)';renderMySpace();" style="font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:5px 12px;border-radius:6px;border:1px solid var(--bd2);background:transparent;color:var(--tx3);cursor:pointer;font-family:var(--mono);transition:all .15s;margin-right:8px">Active only</button>
       <button class="ms-tab active" data-mstab="todo" style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:7px 16px;border-radius:6px 6px 0 0;border:none;background:transparent;color:var(--tx2);cursor:pointer;font-family:var(--font);transition:all .15s;border-bottom:2px solid transparent">My To-Do</button>
       <button class="ms-tab" data-mstab="timeline" style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:7px 16px;border-radius:6px 6px 0 0;border:none;background:transparent;color:var(--tx2);cursor:pointer;font-family:var(--font);transition:all .15s;border-bottom:2px solid transparent">My Timeline</button>
@@ -609,7 +614,7 @@ function load(){
 // THEME
 let isDark=true;
 function applyTheme(dark){isDark=dark;document.body.setAttribute('data-theme',dark?'dark':'light');document.getElementById('ic-moon').style.display=dark?'block':'none';document.getElementById('ic-sun').style.display=dark?'none':'block';}
-document.getElementById('theme-btn').addEventListener('click',()=>{applyTheme(!isDark);try{localStorage.setItem('tl-theme-v6',isDark?'dark':'light');}catch(e){}});
+
 // SKIP WEEKENDS
 function updateSkipBtn(){document.getElementById('skip-wk-btn').classList.toggle('btn-active',skipWknds);}
 document.getElementById('skip-wk-btn').addEventListener('click',()=>{skipWknds=!skipWknds;updateSkipBtn();save();toast(skipWknds?'Weekend skip ON':'Weekend skip OFF');});
@@ -951,6 +956,7 @@ function renderJobs(){
         if(fo)phJobs=phJobs.filter(j=>(j.assignees||[]).includes(fo));
         if(fs)phJobs=phJobs.filter(j=>j.status===fs);
         if(fp)phJobs=phJobs.filter(j=>j.priority===fp);
+        if((fo||fs||fp)&&phJobs.length===0)continue;
         h+=`<div class="phase-jblock"><div class="phase-jhdr" data-toggle="ph-${ph.id}">
           <span class="phase-jname">${ph.name}</span>
           <span style="font-size:10px;color:var(--tx3);font-family:var(--mono)">${phJobs.length} job${phJobs.length!==1?'s':''}</span>
@@ -958,8 +964,6 @@ function renderJobs(){
           <button style="padding:2px 8px;font-size:10px;font-family:var(--mono);color:var(--oh-fg);border-color:rgba(192,80,80,.3)" data-dph="${ph.id}">Del</button>
           <div class="chev${phOpen?' open':''}"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
         </div>`;
-        if((fo||fs||fp)&&phJobs.length===0)continue;
-        if((fo||fs||fp)&&phJobs.length===0)continue;
         if(phOpen){
           for(const j of phJobs){
             const jLinks=j.links&&j.links.some(l=>l.url&&l.url.startsWith('http'));
@@ -1293,6 +1297,8 @@ function openAdminPanel(){
 const NOTE_COLORS=['#1e1e1e','#1a2a1a','#1a1a2a','#2a1a00','#2a001a','#001a2a'];
 
 function renderMySpace(){
+  const lbl=document.getElementById('ms-month-lbl');
+  if(lbl)lbl.textContent=MN[vm]+' '+vy;
   const panels=['todo','timeline','calendar','notes'];
   const active=panels.find(p=>{const el=document.getElementById('ms-'+p);return el&&el.style.display!=='none';})||'todo';
   if(active==='todo')renderMyTodo();
@@ -1332,14 +1338,14 @@ function renderMyTodo(){
   let ph='';
   myTodos.forEach((t,i)=>{
     ph+=`<div class="todo-item${t.done?' done':''}">
-      <div class="todo-check${t.done?' checked':''}" data-tidx="${i}"></div>
+      <div class="todo-check${t.done?' checked':''}" data-tidx="${i}" tabindex="-1"></div>
       <div class="todo-name">${t.text}</div>
       <button data-tidx="${i}" class="todo-del-btn" style="font-size:11px;color:var(--tx3);border:none;background:transparent;cursor:pointer;padding:4px 6px;border-radius:4px;flex-shrink:0">✕</button>
     </div>`;
   });
   document.getElementById('todo-personal').innerHTML=ph;
   document.querySelectorAll('.todo-goto').forEach(btn=>{btn.addEventListener('click',e=>{e.stopPropagation();jumpTo('job',+btn.dataset.jid);});});
-  document.querySelectorAll('.todo-check').forEach(el=>{el.addEventListener('click',e=>{e.stopPropagation();const i=+el.dataset.tidx;myTodos[i].done=!myTodos[i].done;saveMyData();renderMyTodo();});});
+  document.querySelectorAll('.todo-check').forEach(el=>{el.addEventListener('click',e=>{e.stopPropagation();e.preventDefault();const i=+el.dataset.tidx;myTodos[i].done=!myTodos[i].done;el.blur();saveMyData();renderMyTodo();});});
   document.querySelectorAll('.todo-del-btn').forEach(btn=>{btn.addEventListener('click',e=>{e.stopPropagation();myTodos.splice(+btn.dataset.tidx,1);saveMyData();renderMyTodo();});});
   const addBtn=document.getElementById('todo-new-btn'),addInp=document.getElementById('todo-new-input');
   if(addBtn&&addInp){
@@ -1356,7 +1362,7 @@ function renderMyTimeline(){
   if(!myJobs.length){el.innerHTML=`<div style="padding:48px;text-align:center;color:var(--tx3);font-family:var(--mono);font-size:13px">${myName?'No active jobs assigned to you':'Link your profile in Team → ⚙ Access'}</div>`;return;}
   const now=now_(),days=dim(vy,vm),D=dw();
   const tm=(now.getFullYear()===vy&&now.getMonth()===vm)?now.getDate():null;
-  let h=`<div style="display:inline-block;min-width:100%"><div style="font-size:20px;font-weight:800;letter-spacing:.04em;padding:0 0 14px;color:var(--tx)">${MN[vm]} ${vy}</div><div class="tl-hdr-row"><div class="tl-lbl-hdr" style="width:${LW}px">My Jobs</div><div class="tl-days-hdr">`;
+  let h=`<div style="display:inline-block;min-width:100%"><div class="tl-hdr-row"><div class="tl-lbl-hdr" style="width:${LW}px">My Jobs</div><div class="tl-days-hdr">`;
   for(let d=1;d<=days;d++){const w=dow(vy,vm,d),isW=w===0||w===6,isT=d===tm;h+=`<div class="tl-dh${isW?' wkh':''}" style="width:${D}px"><div class="tl-dn">${DNS[w]}</div><div class="tl-dd${isT?' tc':''}">${d}</div></div>`;}
   h+=`</div></div>`;
   myJobs.forEach(j=>{
@@ -1377,10 +1383,7 @@ function renderMyCalendar(){
   const days=dim(vy,vm),first=dow(vy,vm,1),now=now_();
   const el=document.getElementById('ms-cal-inner');
   // Month header
-  const calWrap=el.parentElement;
-  let monthHdr=calWrap.querySelector('.ms-cal-month-hdr');
-  if(!monthHdr){monthHdr=document.createElement('div');monthHdr.className='ms-cal-month-hdr';monthHdr.style.cssText='font-size:20px;font-weight:800;letter-spacing:.04em;padding:0 0 14px;color:var(--tx)';calWrap.insertBefore(monthHdr,el);}
-  monthHdr.textContent=MN[vm]+' '+vy;
+
   let h=DN7.map((d,i)=>`<div class="cal-dh${i===0||i===6?' wkh':''}">${d}</div>`).join('');
   let cellDay=1-first;
   for(let cell=0;cell<42;cell++){
@@ -1407,11 +1410,9 @@ function renderMyNotes(){
   let h=myNotes.map((n,i)=>`<div class="note-card" data-nidx="${i}" draggable="true" style="background:${n.color||'#1e1e1e'}">
     <div style="display:flex;align-items:center;gap:6px">
       <input class="note-card-title" data-nidx="${i}" placeholder="Title..." value="${(n.title||'').replace(/"/g,'&quot;')}">
-      <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
-        <button class="note-fmt-btn bold" data-fmt="bold" style="font-weight:900">B</button>
-        <button class="note-fmt-btn italic" data-fmt="italic" style="font-style:italic">I</button>
-        <button class="note-fmt-btn" data-fmt="underline" style="text-decoration:underline">U</button>
-        ${NOTE_COLORS.map((c,ci)=>`<div class="note-color-dot${(n.color||NOTE_COLORS[0])===c?' active':''}" data-nidx="${i}" data-color="${c}" style="width:14px;height:14px;border-radius:50%;cursor:pointer;border:2px solid ${(n.color||NOTE_COLORS[0])===c?'var(--tx)':'transparent'};background:${c==='#1e1e1e'?'#4b4b4b':c};display:inline-block;flex-shrink:0"></div>`).join('')}
+      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+        ${NOTE_COLORS.map((c,ci)=>`<div class="note-color-dot${(n.color||NOTE_COLORS[0])===c?' active':''}" data-nidx="${i}" data-color="${c}" style="width:14px;height:14px;border-radius:50%;cursor:pointer;border:2px solid ${(n.color||NOTE_COLORS[0])===c?'var(--tx)':'transparent'};background:${c==='#1e1e1e'?'#4b4b4b':c};display:inline-block;flex-shrink:0">
+      </div>`).join('')}
       </div>
     </div>
     <textarea class="note-body" data-nidx="${i}" placeholder="Write something...">${n.body||''}</textarea>
@@ -1424,17 +1425,7 @@ function renderMyNotes(){
   grid.innerHTML=h;
   grid.querySelectorAll('.note-card-title').forEach(inp=>{inp.addEventListener('input',()=>{myNotes[+inp.dataset.nidx].title=inp.value;saveMyData();});});
   grid.querySelectorAll('.note-body').forEach(ta=>{ta.addEventListener('input',()=>{myNotes[+ta.dataset.nidx].body=ta.value;saveMyData();});});
-  grid.querySelectorAll('.note-fmt-btn').forEach(btn=>{
-    btn.addEventListener('click',e=>{
-      e.stopPropagation();const ta=btn.closest('.note-card').querySelector('.note-body');
-      const start=ta.selectionStart,end=ta.selectionEnd,sel=ta.value.substring(start,end);
-      if(!sel)return;
-      const tags={bold:['**','**'],italic:['_','_'],underline:['__','__']};
-      const[o,c]=tags[btn.dataset.fmt]||['',''];
-      ta.value=ta.value.substring(0,start)+o+sel+c+ta.value.substring(end);
-      myNotes[+ta.dataset.nidx].body=ta.value;saveMyData();
-    });
-  });
+
   grid.querySelectorAll('.note-color-dot').forEach(dot=>{
     dot.addEventListener('click',e=>{e.stopPropagation();myNotes[+dot.dataset.nidx].color=dot.dataset.color;saveMyData();renderMyNotes();});
   });

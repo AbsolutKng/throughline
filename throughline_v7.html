@@ -1176,13 +1176,26 @@ document.getElementById('xl-btn').addEventListener('click',()=>{
 // ═══ FIREBASE AUTH + INIT ═══
 document.querySelector('.app').style.display='none';
 
+// ═══ SESSION TIMEOUT — 24hr inactivity ═══
+const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours in ms
+function touchActivity(){try{localStorage.setItem('tl-last-active',Date.now());}catch(e){}}
+function isSessionExpired(){
+  try{
+    const last=parseInt(localStorage.getItem('tl-last-active')||'0');
+    if(!last)return false; // first visit, don't expire
+    return Date.now()-last>SESSION_TIMEOUT;
+  }catch(e){return false;}
+}
+// Track activity on user interactions
+['click','keydown','scroll'].forEach(ev=>document.addEventListener(ev,touchActivity,{passive:true}));
+
 function updateMsZL(){const el=document.getElementById('ms-zl');if(el)el.textContent=TL_ZOOMS[msZoomIdx].label;}
 document.getElementById('ms-zi')?.addEventListener('click',()=>{if(msZoomIdx<TL_ZOOMS.length-1){msZoomIdx++;msCZoomIdx=Math.min(CAL_ZOOMS.length-1,msCZoomIdx+1);updateMsZL();renderMySpace();}});
 document.getElementById('ms-zo')?.addEventListener('click',()=>{if(msZoomIdx>0){msZoomIdx--;msCZoomIdx=Math.max(0,msCZoomIdx-1);updateMsZL();renderMySpace();}});
 
 
 try{const th=localStorage.getItem('tl-theme-v7');if(th)applyTheme(th==='dark');}catch(e){}
-document.getElementById('theme-btn').addEventListener('click',()=>{applyTheme(!isDark);try{localStorage.setItem('tl-theme-v7',isDark?'dark':'light');}catch(e){}});
+document.getElementById('theme-btn').addEventListener('click',()=>{applyTheme(!isDark);try{localStorage.setItem('tl-theme-v7',isDark?'dark':'light');}catch(e){}if(activeTab==='myspace')renderMyNotes();});
 
 document.getElementById('google-signin-btn').addEventListener('click',async()=>{
   const btn=document.getElementById('google-signin-btn');
@@ -1200,6 +1213,16 @@ auth.onAuthStateChanged(async(user)=>{
     if(unsubscribeData){unsubscribeData();unsubscribeData=null;}
     currentUser=null;return;
   }
+  // Check session timeout
+  if(isSessionExpired()){
+    await auth.signOut();
+    const err=document.getElementById('login-error');
+    err.textContent='Session expired after 24hrs of inactivity. Please sign in again.';
+    err.style.display='block';
+    return;
+  }
+  touchActivity(); // reset timer on successful login
+
   // Check if user is registered
   const userDoc=await db.collection('users').doc(user.uid).get();
   if(!userDoc.exists){
@@ -1281,6 +1304,7 @@ function startRealtimeSync(){
 async function saveToFirestore(){
   if(!currentUser)return;
   if(currentRole!=='admin'&&currentRole!=='editor')return;
+  touchActivity(); // reset inactivity timer on every save
   setSaveDot('saving');
   try{
     await db.collection('data').doc('main').set(ser());
@@ -1515,7 +1539,7 @@ function renderMyNotes(){
     <div style="display:flex;align-items:center;gap:6px">
       <input class="note-card-title" data-nidx="${i}" placeholder="Title..." value="${(n.title||'').replace(/"/g,'&quot;')}">
       <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-        ${NOTE_COLORS.map((c,ci)=>`<div class="note-color-dot${(n.color||NOTE_COLORS[0])===c?' active':''}" data-nidx="${i}" data-color="${c}" style="width:14px;height:14px;border-radius:50%;cursor:pointer;border:2px solid ${(n.color||NOTE_COLORS[0])===c?'var(--tx)':'transparent'};background:${c==='#1e1e1e'?'#4b4b4b':c};display:inline-block;flex-shrink:0">
+        ${NOTE_COLORS.map((c,ci)=>`<div class="note-color-dot${(n.color||NOTE_COLORS[0])===c?' active':''}" data-nidx="${i}" data-color="${c}" style="width:14px;height:14px;border-radius:50%;cursor:pointer;border:2px solid ${(n.color||NOTE_COLORS[0])===c?'var(--tx)':'transparent'};background:${isDark?(c==='#1e1e1e'?'#4b4b4b':c):(NOTE_COLORS_LIGHT[NOTE_COLORS.indexOf(c)]||'#f0ede8')};display:inline-block;flex-shrink:0">
       </div>`).join('')}
       </div>
     </div>

@@ -1558,10 +1558,298 @@ document.getElementById('theme-btn').addEventListener('click', () => {
   applyTheme(!isDark);
   try { localStorage.setItem('tl-theme-v7', isDark ? 'dark' : 'light'); } catch(e) {}
 });
-</script>
-</body>
-</html>
-<script>
+
+// ═══ MY SPACE ═══
+const NOTE_COLORS=['#1e1e1e','#1a2a1a','#1a1a2a','#2a1a00','#2a001a','#001a2a'];
+const NOTE_COLORS_LIGHT=['#f5f3f0','#edf5ed','#edeef5','#fdf5e6','#fdedf5','#e6f5fd'];
+
+let myTodos=[];   // personal tasks: {id,text,done}
+let myNotes=[];   // notes: {id,title,body,color,order}
+let msActivePanel='todo';
+
+function getLinkedMember(){
+  if(!currentUser)return null;
+  // Find member linked to current user
+  return members.find(m=>m.name===currentUserLinkedMember)||null;
+}
+let currentUserLinkedMember=null; // set after auth
+
+function renderMySpace(){
+  // find active sub-panel
+  const panel=document.querySelector('#view-myspace .ms-panel.active');
+  if(!panel)return;
+  const pid=panel.id.replace('ms-','');
+  if(pid==='todo')renderMyTodo();
+  else if(pid==='timeline')renderMyTimeline();
+  else if(pid==='calendar')renderMyCalendar();
+  else if(pid==='notes')renderMyNotes();
+}
+
+// ── MY TO-DO ──
+function renderMyTodo(){
+  const now=now_();
+  // Assigned jobs
+  const myName=currentUserLinkedMember;
+  const myJobs=myName?jobs.filter(j=>(j.assignees||[]).includes(myName)&&j.status!=='Completed'):[];
+  myJobs.sort((a,b)=>{
+    if(!a.end&&!b.end)return 0;if(!a.end)return 1;if(!b.end)return -1;return a.end-b.end;
+  });
+
+  let h='';
+  if(myJobs.length){
+    h+=`<div class="todo-section"><div class="todo-section-title">Assigned jobs (${myJobs.length})</div>`;
+    myJobs.forEach(j=>{
+      const p=projects.find(x=>x.id===j.pid);
+      const diff=j.end?Math.ceil((j.end-now)/864e5):null;
+      const isOver=diff!==null&&diff<0&&j.status!=='Completed';
+      const isSoon=diff!==null&&diff>=0&&diff<=3;
+      h+=`<div class="todo-item${isOver?' overdue':isSoon?' due-soon':''}">
+        <div class="todo-proj-dot" style="background:${p?.color||'#666'}"></div>
+        <div style="flex:1;min-width:0">
+          <div class="todo-name">${j.name}</div>
+          <div style="font-size:10px;color:var(--tx3);font-family:var(--mono);margin-top:2px">${p?.name||''}${j.end?` · ${isOver?'Overdue':'Due '+fl(j.end)}':' · TBD'}</div>
+        </div>
+        ${j.priority!=='Normal'?prioBadge(j.priority):''}
+        ${pill(j.status)}
+        <button class="todo-goto" data-jid="${j.id}">→ Go to job</button>
+      </div>`;
+    });
+    h+=`</div>`;
+  } else {
+    h+=`<div class="todo-section"><div class="todo-section-title">Assigned jobs</div><div class="ms-empty" style="padding:24px">No active jobs assigned to you</div></div>`;
+  }
+  document.getElementById('todo-assigned').innerHTML=h;
+
+  // Personal tasks
+  let ph='';
+  myTodos.forEach((t,i)=>{
+    ph+=`<div class="todo-item${t.done?' done':''}">
+      <div class="todo-check${t.done?' checked':''}" data-tidx="${i}"></div>
+      <div class="todo-name">${t.text}</div>
+      <button class="todo-del-btn" data-tidx="${i}" style="font-size:11px;color:var(--tx3);border:none;background:transparent;cursor:pointer;padding:4px 6px;border-radius:4px;flex-shrink:0" title="Delete">✕</button>
+    </div>`;
+  });
+  document.getElementById('todo-personal').innerHTML=ph;
+
+  // Attach handlers
+  document.querySelectorAll('.todo-goto').forEach(btn=>{
+    btn.addEventListener('click',e=>{e.stopPropagation();jumpTo('job',+btn.dataset.jid);});
+  });
+  document.querySelectorAll('.todo-check').forEach(el=>{
+    el.addEventListener('click',()=>{const i=+el.dataset.tidx;myTodos[i].done=!myTodos[i].done;saveMyData();renderMyTodo();});
+  });
+  document.querySelectorAll('.todo-del-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{e.stopPropagation();myTodos.splice(+btn.dataset.tidx,1);saveMyData();renderMyTodo();});
+  });
+
+  // Add task
+  const addBtn=document.getElementById('todo-new-btn');
+  const addInp=document.getElementById('todo-new-input');
+  if(addBtn&&addInp){
+    const doAdd=()=>{
+      const txt=addInp.value.trim();
+      if(!txt)return;
+      myTodos.push({id:Date.now(),text:txt,done:false});
+      addInp.value='';
+      saveMyData();
+      renderMyTodo();
+    };
+    addBtn.onclick=doAdd;
+    addInp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();doAdd();}};
+    addInp.focus();
+  }
+}
+
+// ── MY TIMELINE ──
+function renderMyTimeline(){
+  const myName=currentUserLinkedMember;
+  const myJobs=myName?jobs.filter(j=>(j.assignees||[]).includes(myName)):[];
+  const el=document.getElementById('ms-tl-inner');
+  if(!myJobs.length){el.innerHTML=`<div class="ms-empty">No jobs assigned to you</div>`;return;}
+  // Reuse timeline but filter to my jobs only — simple list view
+  const now=now_(),days=dim(vy,vm),D=dw();
+  const tm=(now.getFullYear()===vy&&now.getMonth()===vm)?now.getDate():null;
+  let h=`<div style="display:inline-block;min-width:100%">`;
+  h+=`<div class="tl-hdr-row"><div class="tl-lbl-hdr" style="width:${LW}px">My Jobs</div><div class="tl-days-hdr">`;
+  for(let d=1;d<=days;d++){const w=dow(vy,vm,d),isW=w===0||w===6,isT=d===tm;h+=`<div class="tl-dh${isW?' wkh':''}" style="width:${D}px"><div class="tl-dn">${DNS[w]}</div><div class="tl-dd${isT?' tc':''}">${d}</div></div>`;}
+  h+=`</div></div>`;
+  myJobs.forEach(j=>{
+    const p=projects.find(x=>x.id===j.pid);
+    const jcol=sc(j.status);
+    h+=`<div class="job-tl-row"><div class="job-lbl" style="width:${LW}px">
+      <div class="job-dot" style="background:${p?.color||jcol}"></div>
+      <div style="overflow:hidden;min-width:0;flex:1">
+        <div class="job-lbl-name">${j.name}</div>
+        <div style="font-size:9px;color:var(--tx3);font-family:var(--mono)">${p?.name||''}</div>
+      </div>${prioBadge(j.priority)}
+    </div>`;
+    h+=`<div style="flex:1;position:relative;display:flex;overflow:hidden;width:${days*D}px">`;
+    for(let d=1;d<=days;d++){const w=dow(vy,vm,d),isW=w===0||w===6,isT=d===tm;h+=`<div class="tl-c${isW?' wk':''}${isT?' tdc':''}" style="width:${D}px;min-height:36px"></div>`;}
+    const bj=barSpan(j.start,j.end,days);
+    if(bj)h+=`<div class="bar job-bar" style="left:${bj.l}px;width:${bj.w}px;background:${jcol}"><span style="overflow:hidden;text-overflow:ellipsis;flex:1;padding-left:2px">${j.name}</span></div>`;
+    if(tm)h+=`<div class="tl-today-line" style="left:${(tm-.5)*D}px"></div>`;
+    h+=`</div></div>`;
+  });
+  h+=`</div>`;
+  el.innerHTML=h;
+}
+
+// ── MY CALENDAR ──
+function renderMyCalendar(){
+  const myName=currentUserLinkedMember;
+  const days=dim(vy,vm),first=dow(vy,vm,1),now=now_();
+  const el=document.getElementById('ms-cal-inner');
+  let h=DN7.map((d,i)=>`<div class="cal-dh${i===0||i===6?' wkh':''}">${d}</div>`).join('');
+  let cellDay=1-first;
+  for(let cell=0;cell<42;cell++){
+    const d=cellDay,inM=d>=1&&d<=days;
+    const dt=inM?toLocal(vy,vm,d):null;
+    const isT=dt&&sameDay(dt,now);
+    const w=cell%7,isW=w===0||w===6;
+    h+=`<div class="cal-cell${!inM?' other':''}${isT?' today':''}${isW&&inM?' wknd':''}" style="min-height:80px">`;
+    if(inM&&dt){
+      h+=`<div class="cal-num${isT?' tn':''}">${d}</div>`;
+      // My jobs only
+      if(myName)jobs.filter(j=>(j.assignees||[]).includes(myName)&&dateInRange(dt,j.start,j.end)).forEach(j=>{
+        const p=projects.find(x=>x.id===j.pid);
+        h+=`<div class="cal-bar jcb" style="background:${p?.color||sc(j.status)}">${j.name}</div>`;
+      });
+      // My events
+      events.filter(ev=>(ev.members||[]).includes(myName)&&dateInRange(dt,ev.start,ev.end||ev.start)).forEach(ev=>{
+        const etc=EVENT_TYPES[ev.type]||EVENT_TYPES['Other'];
+        h+=`<div class="cal-event" style="background:${etc.color}22;color:${etc.color};border-left-color:${etc.color}">${etc.icon} ${ev.name}</div>`;
+      });
+    }
+    h+=`</div>`;
+    cellDay++;
+  }
+  el.innerHTML=h;
+}
+
+// ── NOTES ──
+function renderMyNotes(){
+  const grid=document.getElementById('notes-grid');if(!grid)return;
+  const dark=isDark;
+  let h=myNotes.map((n,i)=>`
+    <div class="note-card" data-nidx="${i}" draggable="true" style="background:${dark?n.color||'#1e1e1e':NOTE_COLORS_LIGHT[NOTE_COLORS.indexOf(n.color)]||'#f5f3f0'}">
+      <div class="note-card-header">
+        <input class="note-card-title" data-nidx="${i}" placeholder="Title..." value="${(n.title||'').replace(/"/g,'&quot;')}">
+        <div class="note-fmt">
+          <button class="note-fmt-btn bold" data-fmt="bold" title="Bold">B</button>
+          <button class="note-fmt-btn italic" data-fmt="italic" title="Italic">I</button>
+          <button class="note-fmt-btn" data-fmt="underline" title="Underline" style="text-decoration:underline">U</button>
+          <div class="note-color-dot${n.color===NOTE_COLORS[0]||!n.color?' active':''}" data-nidx="${i}" style="background:#4b4b4b" data-color="${NOTE_COLORS[0]}"></div>
+          <div class="note-color-dot${n.color===NOTE_COLORS[1]?' active':''}" data-nidx="${i}" style="background:#2d4a2d" data-color="${NOTE_COLORS[1]}"></div>
+          <div class="note-color-dot${n.color===NOTE_COLORS[2]?' active':''}" data-nidx="${i}" style="background:#2d2d4a" data-color="${NOTE_COLORS[2]}"></div>
+          <div class="note-color-dot${n.color===NOTE_COLORS[3]?' active':''}" data-nidx="${i}" style="background:#4a3500" data-color="${NOTE_COLORS[3]}"></div>
+          <div class="note-color-dot${n.color===NOTE_COLORS[4]?' active':''}" data-nidx="${i}" style="background:#4a002d" data-color="${NOTE_COLORS[4]}"></div>
+          <div class="note-color-dot${n.color===NOTE_COLORS[5]?' active':''}" data-nidx="${i}" style="background:#003566" data-color="${NOTE_COLORS[5]}"></div>
+        </div>
+      </div>
+      <textarea class="note-body" data-nidx="${i}" placeholder="Write something...">${n.body||''}</textarea>
+      <div class="note-footer">
+        <button class="note-del" data-nidx="${i}">Delete</button>
+        <span class="note-drag-hint">⠿ drag to reorder</span>
+      </div>
+    </div>`).join('');
+  h+=`<div class="note-add-card" id="note-add-card"><span>+ New note</span></div>`;
+  grid.innerHTML=h;
+
+  // Title autosave
+  grid.querySelectorAll('.note-card-title').forEach(inp=>{
+    inp.addEventListener('input',()=>{const i=+inp.dataset.nidx;myNotes[i].title=inp.value;saveMyData();});
+  });
+  // Body autosave + formatting
+  grid.querySelectorAll('.note-body').forEach(ta=>{
+    ta.addEventListener('input',()=>{const i=+ta.dataset.nidx;myNotes[i].body=ta.value;saveMyData();});
+  });
+  // Format buttons
+  grid.querySelectorAll('.note-fmt-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const card=btn.closest('.note-card');
+      const ta=card.querySelector('.note-body');
+      const fmt=btn.dataset.fmt;
+      const start=ta.selectionStart,end=ta.selectionEnd;
+      const sel=ta.value.substring(start,end);
+      if(!sel)return;
+      const tags={bold:['**','**'],italic:['_','_'],underline:['__','__']};
+      const[o,c]=tags[fmt]||['',''];
+      ta.value=ta.value.substring(0,start)+o+sel+c+ta.value.substring(end);
+      ta.selectionStart=start;ta.selectionEnd=end+o.length+c.length;
+      const i=+ta.dataset.nidx;myNotes[i].body=ta.value;saveMyData();
+    });
+  });
+  // Color dots
+  grid.querySelectorAll('.note-color-dot').forEach(dot=>{
+    dot.addEventListener('click',e=>{
+      e.stopPropagation();
+      const i=+dot.dataset.nidx;
+      myNotes[i].color=dot.dataset.color;
+      saveMyData();renderMyNotes();
+    });
+  });
+  // Delete
+  grid.querySelectorAll('.note-del').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      if(confirm('Delete this note?')){myNotes.splice(+btn.dataset.nidx,1);saveMyData();renderMyNotes();}
+    });
+  });
+  // Add new note
+  document.getElementById('note-add-card')?.addEventListener('click',()=>{
+    myNotes.unshift({id:Date.now(),title:'',body:'',color:NOTE_COLORS[0],order:0});
+    saveMyData();renderMyNotes();
+    // Focus title of first card
+    setTimeout(()=>document.querySelector('.note-card-title')?.focus(),50);
+  });
+  document.getElementById('note-add-btn')?.addEventListener('click',()=>{
+    myNotes.unshift({id:Date.now(),title:'',body:'',color:NOTE_COLORS[0],order:0});
+    saveMyData();renderMyNotes();
+    setTimeout(()=>document.querySelector('.note-card-title')?.focus(),50);
+  });
+  // Drag to reorder notes
+  let dragNoteIdx=null;
+  grid.querySelectorAll('.note-card[draggable]').forEach(card=>{
+    card.addEventListener('dragstart',e=>{dragNoteIdx=+card.dataset.nidx;card.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+    card.addEventListener('dragend',()=>{card.classList.remove('dragging');grid.querySelectorAll('.drag-over-note').forEach(c=>c.classList.remove('drag-over-note'));});
+    card.addEventListener('dragover',e=>{e.preventDefault();if(+card.dataset.nidx!==dragNoteIdx)card.classList.add('drag-over-note');});
+    card.addEventListener('dragleave',()=>card.classList.remove('drag-over-note'));
+    card.addEventListener('drop',e=>{
+      e.preventDefault();card.classList.remove('drag-over-note');
+      const toIdx=+card.dataset.nidx;if(toIdx===dragNoteIdx)return;
+      const[moved]=myNotes.splice(dragNoteIdx,1);myNotes.splice(toIdx,0,moved);
+      saveMyData();renderMyNotes();
+    });
+  });
+}
+
+// ── SAVE/LOAD PRIVATE DATA ──
+async function saveMyData(){
+  if(!currentUser){console.warn('saveMyData: no user');return;}
+  try{
+    await db.collection('private').doc(currentUser.uid).set({
+      todos:myTodos,
+      notes:myNotes,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }catch(e){
+    console.error('Private save error:',e);
+    toast('Could not save — check connection');
+  }
+}
+async function loadMyData(){
+  if(!currentUser)return;
+  try{
+    const doc=await db.collection('private').doc(currentUser.uid).get();
+    if(doc.exists){const d=doc.data();myTodos=d.todos||[];myNotes=d.notes||[];}
+    else{myTodos=[];myNotes=[];}
+  }catch(e){myTodos=[];myNotes=[];}
+}
+
+// Update tab visibility for My Space
+document.getElementById('myspace-tab').style.display='none'; // hidden until logged in
+
 // ═══ MY SPACE ═══
 const NOTE_COLORS=['#1e1e1e','#1a2a1a','#1a1a2a','#2a1a00','#2a001a','#001a2a'];
 const NOTE_COLORS_LIGHT=['#f5f3f0','#edf5ed','#edeef5','#fdf5e6','#fdedf5','#e6f5fd'];

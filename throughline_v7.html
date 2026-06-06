@@ -466,6 +466,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
         <span id="ms-month-lbl" style="font-size:13px;font-weight:700;min-width:110px;text-align:center"></span>
         <button onclick="vm++;if(vm>11){vm=0;vy++;}save();renderMySpace();" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--bd2);background:transparent;color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s">›</button>
       </div>
+      <div style="display:flex;align-items:center;gap:4px;margin-right:8px">
+        <button id="ms-zo" style="width:26px;height:26px;border-radius:5px;border:1px solid var(--bd2);background:transparent;color:var(--tx2);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;font-family:var(--mono)">−</button>
+        <span id="ms-zl" style="font-size:11px;color:var(--tx3);font-family:var(--mono);min-width:32px;text-align:center"></span>
+        <button id="ms-zi" style="width:26px;height:26px;border-radius:5px;border:1px solid var(--bd2);background:transparent;color:var(--tx2);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;font-family:var(--mono)">+</button>
+      </div>
       <button id="ms-active-btn" onclick="msActiveOnly=!msActiveOnly;this.style.background=msActiveOnly?'var(--ip)':'transparent';this.style.color=msActiveOnly?'var(--ip-fg)':'var(--tx3)';this.style.borderColor=msActiveOnly?'rgba(91,141,238,.3)':'var(--bd2)';renderMySpace();" style="font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:5px 12px;border-radius:6px;border:1px solid var(--bd2);background:transparent;color:var(--tx3);cursor:pointer;font-family:var(--mono);transition:all .15s;margin-right:8px">Active only</button>
       <button class="ms-tab active" data-mstab="todo" style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:7px 16px;border-radius:6px 6px 0 0;border:none;background:transparent;color:var(--tx2);cursor:pointer;font-family:var(--font);transition:all .15s;border-bottom:2px solid transparent">My To-Do</button>
       <button class="ms-tab" data-mstab="timeline" style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:7px 16px;border-radius:6px 6px 0 0;border:none;background:transparent;color:var(--tx2);cursor:pointer;font-family:var(--font);transition:all .15s;border-bottom:2px solid transparent">My Timeline</button>
@@ -528,7 +533,7 @@ const auth=firebase.auth();
 const db=firebase.firestore();
 const provider=new firebase.auth.GoogleAuthProvider();
 let currentUser=null,currentRole='viewer',currentUserLinkedMember=null,unsubscribeData=null;
-let myTodos=[],myNotes=[],msActiveOnly=false;
+let myTodos=[],myNotes=[],msActiveOnly=false,msZoomIdx=TL_DEF,msCZoomIdx=CAL_DEF;
 const SK='throughline-v6-local';
 const LW=175;
 // FIX: Pixel-based zoom levels — each step has explicit px-per-day
@@ -638,11 +643,40 @@ function buildAlerts(){
   const over=jobs.filter(j=>j.end&&j.status!=='Completed'&&j.end<now);
   const soon=jobs.filter(j=>j.end&&j.status!=='Completed'&&!over.includes(j)&&Math.ceil((j.end-now)/864e5)<=3);
   const rev=jobs.filter(j=>j.status==='Review');
-  if(over.length)chips.push(`<span class="a-chip a-over">⚠ ${over.length} overdue</span>`);
-  if(soon.length)chips.push(`<span class="a-chip a-soon">● ${soon.length} due within 3 days</span>`);
-  if(rev.length)chips.push(`<span class="a-chip a-rev">◎ ${rev.length} in review</span>`);
+  if(over.length)chips.push(`<span class="a-chip a-over" style="cursor:pointer" data-alert="over">⚠ ${over.length} overdue</span>`);
+  if(soon.length)chips.push(`<span class="a-chip a-soon" style="cursor:pointer" data-alert="soon">● ${soon.length} due within 3 days</span>`);
+  if(rev.length)chips.push(`<span class="a-chip a-rev" style="cursor:pointer" data-alert="rev">◎ ${rev.length} in review</span>`);
   document.getElementById('a-chips').innerHTML=chips.join(' ');
   document.getElementById('alert-strip').classList.toggle('on',chips.length>0);
+  // Attach click handlers to chips
+  document.querySelectorAll('[data-alert]').forEach(chip=>{
+    chip.addEventListener('click',()=>{
+      const type=chip.dataset.alert;
+      const now2=now_();
+      const jobList=type==='over'?jobs.filter(j=>j.end&&j.status!=='Completed'&&j.end<now2):
+                    type==='soon'?jobs.filter(j=>j.end&&j.status!=='Completed'&&Math.ceil((j.end-now2)/864e5)<=3&&j.end>=now2):
+                    jobs.filter(j=>j.status==='Review');
+      const title=type==='over'?'⚠ Overdue Jobs':type==='soon'?'● Due Within 3 Days':'◎ In Review';
+      const rows=jobList.map(j=>{
+        const p=projects.find(x=>x.id===j.pid);
+        return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd);cursor:pointer" class="alert-job-row" data-jid="${j.id}">
+          <div style="width:8px;height:8px;border-radius:2px;flex-shrink:0;background:${p?.color||'#666'}"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${j.name}</div>
+            <div style="font-size:10px;color:var(--tx3);font-family:var(--mono);margin-top:2px">${p?.name||''} · ${j.end?fl(j.end):'TBD'} · ${(j.assignees||[]).join(', ')||'—'}</div>
+          </div>
+          ${pill(j.status)}${prioBadge(j.priority)}
+          <span style="font-size:10px;font-family:var(--mono);color:var(--ip-fg)">→ Go</span>
+        </div>`;
+      }).join('');
+      showModal(`<div class="modal-title">${title}</div><div>${rows||'<div style="padding:20px;text-align:center;color:var(--tx3);font-family:var(--mono)">Nothing here</div>'}</div><div class="mactions"><button class="btn" id="mc2">Close</button></div>`,()=>{
+        document.getElementById('mc2').addEventListener('click',closeModal);
+        document.querySelectorAll('.alert-job-row').forEach(row=>{
+          row.addEventListener('click',()=>{closeModal();jumpTo('job',+row.dataset.jid);});
+        });
+      });
+    });
+  });
 }
 document.getElementById('a-dis').addEventListener('click',()=>{alertDis=true;document.getElementById('alert-strip').classList.remove('on');});
 // FILTERS
@@ -1017,7 +1051,7 @@ function renderTeam(){
     const load=Math.min(100,Math.round(aj.length/8*100));
     const lc=load>80?'var(--oh-fg)':load>50?'var(--rv-fg)':'var(--cp-fg)';
     const upcoming=events.filter(ev=>(ev.members||[]).includes(m.name)&&ev.start&&ev.start>=now).sort((a,b)=>a.start-b.start).slice(0,3);
-    h+=`<div class="tm-card"><div class="tm-hdr">
+    h+=`<div class="tm-card"><div class="tm-hdr" style="cursor:pointer" data-tmp="${m.id}">
       <div class="tm-av" style="background:${m.color}22;color:${m.color}">${memberInitials(m.name)}</div>
       <div style="flex:1;min-width:0"><div class="tm-name">${m.name}</div><div class="tm-role">${m.role}</div></div>
       <button class="tm-edt" data-tm="${m.id}">Edit</button>
@@ -1035,6 +1069,7 @@ function renderTeam(){
   h+=`<div class="add-tm-card" id="add-tm-c"><span>+ Add team member</span></div>`;
   document.getElementById('team-grid').innerHTML=h;
   document.querySelectorAll('[data-tm]').forEach(el=>{el.addEventListener('click',e=>{e.stopPropagation();openEditMember(+el.dataset.tm);});});
+  document.querySelectorAll('[data-tmp]').forEach(el=>{el.addEventListener('click',e=>{if(e.target.closest('[data-tm]'))return;openMemberProfile(+el.dataset.tmp);});});
   document.getElementById('add-tm-c')?.addEventListener('click',openAddMember);
 }
 // MODALS
@@ -1140,6 +1175,12 @@ document.getElementById('xl-btn').addEventListener('click',()=>{
 });
 // ═══ FIREBASE AUTH + INIT ═══
 document.querySelector('.app').style.display='none';
+
+function updateMsZL(){const el=document.getElementById('ms-zl');if(el)el.textContent=TL_ZOOMS[msZoomIdx].label;}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('ms-zi')?.addEventListener('click',()=>{if(msZoomIdx<TL_ZOOMS.length-1){msZoomIdx++;msCZoomIdx=Math.min(CAL_ZOOMS.length-1,msCZoomIdx+1);updateMsZL();renderMySpace();}});
+  document.getElementById('ms-zo')?.addEventListener('click',()=>{if(msZoomIdx>0){msZoomIdx--;msCZoomIdx=Math.max(0,msCZoomIdx-1);updateMsZL();renderMySpace();}});
+});
 try{const th=localStorage.getItem('tl-theme-v7');if(th)applyTheme(th==='dark');}catch(e){}
 document.getElementById('theme-btn').addEventListener('click',()=>{applyTheme(!isDark);try{localStorage.setItem('tl-theme-v7',isDark?'dark':'light');}catch(e){}});
 
@@ -1248,6 +1289,65 @@ async function saveToFirestore(){
 }
 function save(){try{localStorage.setItem('throughline-v6-local',JSON.stringify(ser()));}catch(e){}saveToFirestore();}
 
+// ═══ MEMBER PROFILE POPUP ═══
+function openMemberProfile(mid){
+  const m=members.find(x=>x.id===mid);if(!m)return;
+  const now=now_(),weekEnd=new Date(now);weekEnd.setDate(weekEnd.getDate()+7);
+  const aj=jobs.filter(j=>(j.assignees||[]).includes(m.name)&&j.status!=='Completed');
+  const allJ=jobs.filter(j=>(j.assignees||[]).includes(m.name));
+  const done=allJ.filter(j=>j.status==='Completed').length;
+  const tw=aj.filter(j=>j.end&&j.end<=weekEnd);
+  const crit=aj.filter(j=>j.priority==='Critical');
+  const load=Math.min(100,Math.round(aj.length/8*100));
+  const lc=load>80?'var(--oh-fg)':load>50?'var(--rv-fg)':'var(--cp-fg)';
+  // Find linked email from Firebase users if available
+  const upcoming=events.filter(ev=>(ev.members||[]).includes(m.name)&&ev.start&&ev.start>=now).sort((a,b)=>a.start-b.start).slice(0,5);
+  // Get linked user email
+  let linkedEmail='—';
+  db.collection('users').where('linkedMember','==',m.name).get().then(snap=>{
+    if(!snap.empty)linkedEmail=snap.docs[0].data().email;
+    const jobRows=aj.slice(0,6).map(j=>{
+      const p=projects.find(x=>x.id===j.pid);
+      return`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd);cursor:pointer" class="profile-job-row" data-jid="${j.id}">
+        <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:${sc(j.status)}"></div>
+        <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${j.name}</div>
+        <div style="font-size:10px;color:var(--tx3);font-family:var(--mono)">${p?.name||''} · ${j.end?fl(j.end):'TBD'}</div></div>
+        ${prioBadge(j.priority)}${pill(j.status)}
+      </div>`;
+    }).join('');
+    const upcomingRows=upcoming.map(ev=>{const etc=EVENT_TYPES[ev.type]||EVENT_TYPES['Other'];return`<div style="font-size:11px;font-family:var(--mono);color:var(--tx3);padding:4px 0;display:flex;align-items:center;gap:6px"><span style="color:${etc.color}">${etc.icon}</span>${ev.name} · ${fl(ev.start)}</div>`;}).join('');
+    showModal(`
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+        <div style="width:52px;height:52px;border-radius:12px;background:${m.color}22;color:${m.color};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;font-family:var(--mono);flex-shrink:0">${memberInitials(m.name)}</div>
+        <div>
+          <div style="font-size:18px;font-weight:800">${m.name}</div>
+          <div style="font-size:11px;color:var(--tx3);font-family:var(--mono);margin-top:2px">${m.role}</div>
+          <div style="font-size:10px;color:var(--tx3);font-family:var(--mono);margin-top:2px">${linkedEmail}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+        <div style="background:var(--raised);border-radius:7px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:800">${aj.length}</div><div style="font-size:9px;color:var(--tx3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Active</div></div>
+        <div style="background:var(--raised);border-radius:7px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:800">${tw.length}</div><div style="font-size:9px;color:var(--tx3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;margin-top:2px">This week</div></div>
+        <div style="background:var(--raised);border-radius:7px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:800;color:var(--oh-fg)">${crit.length}</div><div style="font-size:9px;color:var(--tx3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Critical</div></div>
+        <div style="background:var(--raised);border-radius:7px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:800;color:var(--cp-fg)">${done}</div><div style="font-size:9px;color:var(--tx3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Done</div></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:10px;font-family:var(--mono);color:var(--tx3);display:flex;justify-content:space-between;margin-bottom:4px"><span>Workload</span><span style="color:${lc}">${load}%</span></div>
+        <div style="height:5px;background:var(--bd2);border-radius:99px;overflow:hidden"><div style="height:100%;border-radius:99px;background:${lc};width:${load}%"></div></div>
+      </div>
+      ${aj.length?`<div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);font-family:var(--mono);margin-bottom:8px">Active jobs</div>${jobRows}${aj.length>6?`<div style="font-size:10px;color:var(--tx3);font-family:var(--mono);padding:6px 0">+${aj.length-6} more</div>`:''}`:''} 
+      ${upcoming.length?`<div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);font-family:var(--mono);margin:12px 0 6px">Upcoming events</div>${upcomingRows}`:''}
+      <div class="mactions"><button class="btn" id="mc2">Close</button><button class="btn" data-tm2="${m.id}">Edit member</button></div>`,()=>{
+      document.getElementById('mc2').addEventListener('click',closeModal);
+      document.querySelector('[data-tm2]')?.addEventListener('click',()=>{closeModal();openEditMember(mid);});
+      document.querySelectorAll('.profile-job-row').forEach(row=>{row.addEventListener('click',()=>{closeModal();jumpTo('job',+row.dataset.jid);});});
+    });
+  }).catch(()=>{
+    // Fallback without email
+    linkedEmail='(link in ⚙ Access)';
+  });
+}
+
 // ═══ ADMIN PANEL ═══
 function openAdminPanel(){
   Promise.all([db.collection('users').get(),db.collection('pending_users').get()]).then(([userSnap,pendingSnap])=>{
@@ -1299,6 +1399,7 @@ const NOTE_COLORS=['#1e1e1e','#1a2a1a','#1a1a2a','#2a1a00','#2a001a','#001a2a'];
 function renderMySpace(){
   const lbl=document.getElementById('ms-month-lbl');
   if(lbl)lbl.textContent=MN[vm]+' '+vy;
+  updateMsZL();
   const panels=['todo','timeline','calendar','notes'];
   const active=panels.find(p=>{const el=document.getElementById('ms-'+p);return el&&el.style.display!=='none';})||'todo';
   if(active==='todo')renderMyTodo();
@@ -1360,7 +1461,7 @@ function renderMyTimeline(){
   if(msActiveOnly)myJobs=myJobs.filter(j=>j.status!=='Completed'&&j.status!=='Not started');
   const el=document.getElementById('ms-tl-inner');
   if(!myJobs.length){el.innerHTML=`<div style="padding:48px;text-align:center;color:var(--tx3);font-family:var(--mono);font-size:13px">${myName?'No active jobs assigned to you':'Link your profile in Team → ⚙ Access'}</div>`;return;}
-  const now=now_(),days=dim(vy,vm),D=dw();
+  const now=now_(),days=dim(vy,vm),D=TL_ZOOMS[msZoomIdx].px;
   const tm=(now.getFullYear()===vy&&now.getMonth()===vm)?now.getDate():null;
   let h=`<div style="display:inline-block;min-width:100%"><div class="tl-hdr-row"><div class="tl-lbl-hdr" style="width:${LW}px">My Jobs</div><div class="tl-days-hdr">`;
   for(let d=1;d<=days;d++){const w=dow(vy,vm,d),isW=w===0||w===6,isT=d===tm;h+=`<div class="tl-dh${isW?' wkh':''}" style="width:${D}px"><div class="tl-dn">${DNS[w]}</div><div class="tl-dd${isT?' tc':''}">${d}</div></div>`;}
@@ -1381,6 +1482,7 @@ function renderMyTimeline(){
 function renderMyCalendar(){
   const myName=currentUserLinkedMember;
   const days=dim(vy,vm),first=dow(vy,vm,1),now=now_();
+  const cellH=Math.round(95*CAL_ZOOMS[msCZoomIdx]);
   const el=document.getElementById('ms-cal-inner');
   // Month header
 
@@ -1391,7 +1493,7 @@ function renderMyCalendar(){
     const dt=inM?toLocal(vy,vm,d):null;
     const isT=dt&&sameDay(dt,now);
     const w=cell%7,isW=w===0||w===6;
-    h+=`<div class="cal-cell${!inM?' other':''}${isT?' today':''}${isW&&inM?' wknd':''}" style="min-height:80px">`;
+    h+=`<div class="cal-cell${!inM?' other':''}${isT?' today':''}${isW&&inM?' wknd':''}" style="min-height:${cellH}px">`;
     if(inM&&dt){
       h+=`<div class="cal-num${isT?' tn':''}">${d}</div>`;
       if(myName){

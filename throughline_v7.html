@@ -1395,6 +1395,8 @@ function openAdminPanel(){
 
 // ═══ MY SPACE ═══
 const NOTE_COLORS=['#1e1e1e','#1a2a1a','#1a1a2a','#2a1a00','#2a001a','#001a2a'];
+const NOTE_COLORS_LIGHT=['#f0ede8','#e8f0e8','#eae8f5','#f5f0e0','#f5e8f0','#e0eef5'];
+function noteColor(c){return isDark?c:(NOTE_COLORS_LIGHT[NOTE_COLORS.indexOf(c)]||'#f0ede8');}
 
 function renderMySpace(){
   const lbl=document.getElementById('ms-month-lbl');
@@ -1509,7 +1511,7 @@ function renderMyCalendar(){
 
 function renderMyNotes(){
   const grid=document.getElementById('notes-grid');if(!grid)return;
-  let h=myNotes.map((n,i)=>`<div class="note-card" data-nidx="${i}" draggable="true" style="background:${n.color||'#1e1e1e'}">
+  let h=myNotes.map((n,i)=>`<div class="note-card" data-nidx="${i}" draggable="true" style="background:${noteColor(n.color||NOTE_COLORS[0])}">
     <div style="display:flex;align-items:center;gap:6px">
       <input class="note-card-title" data-nidx="${i}" placeholder="Title..." value="${(n.title||'').replace(/"/g,'&quot;')}">
       <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
@@ -1536,7 +1538,9 @@ function renderMyNotes(){
   });
   const addNew=()=>{myNotes.unshift({id:Date.now(),title:'',body:'',color:NOTE_COLORS[0]});saveMyData();renderMyNotes();setTimeout(()=>document.querySelector('.note-card-title')?.focus(),50);};
   document.getElementById('note-add-card')?.addEventListener('click',addNew);
-  document.getElementById('note-add-btn')?.addEventListener('click',addNew);
+  // note-add-btn is outside the grid - use onclick to avoid stacking listeners
+  const addBtn=document.getElementById('note-add-btn');
+  if(addBtn)addBtn.onclick=addNew;
   let dragNoteIdx=null;
   grid.querySelectorAll('.note-card[draggable]').forEach(card=>{
     card.addEventListener('dragstart',e=>{dragNoteIdx=+card.dataset.nidx;card.classList.add('dragging');e.dataTransfer.effectAllowed='move';});

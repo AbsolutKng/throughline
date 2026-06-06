@@ -672,7 +672,17 @@ document.getElementById('cal-zr').addEventListener('click',()=>{calZoomIdx=CAL_D
 // TABS
 document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',()=>{activeTab=t.dataset.tab;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');['timeline','calendar','jobs','team','myspace'].forEach(id=>document.getElementById('view-'+id).classList.toggle('active',id===activeTab));if(activeTab==='myspace')renderMySpace();else renderAll();});});
 // My Space sub-tabs
-document.querySelectorAll('.ms-tab').forEach(t=>{t.addEventListener('click',()=>{document.querySelectorAll('.ms-tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.querySelectorAll('.ms-panel').forEach(p=>p.classList.remove('active'));document.getElementById('ms-'+t.dataset.mstab).classList.add('active');renderMySpace();});});
+document.querySelectorAll('.ms-tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.ms-tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.querySelectorAll('.ms-panel').forEach(p=>p.classList.remove('active'));
+    const panelId='ms-'+t.dataset.mstab;
+    const panel=document.getElementById(panelId);
+    if(panel)panel.classList.add('active');
+    renderMySpace();
+  });
+});
 function renderAll(){document.getElementById('tl-month').textContent=MN[vm]+' '+vy;document.getElementById('cal-month').textContent=MN[vm]+' '+vy;populateFilters();renderTimeline();renderCalendar();renderJobs();renderTeam();if(activeTab==='myspace')renderMySpace();}
 // ALERTS
 function buildAlerts(){
@@ -1240,17 +1250,17 @@ auth.onAuthStateChanged(async (user) => {
   // Apply role restrictions
   applyRoleUI();
 
-  // Load data from Firestore (real-time)
-  startRealtimeSync();
-
-  // Load private workspace data
-  await loadMyData();
-
-  // Set linked member from user doc
+  // Set linked member from user doc (do this before sync so My Space renders correctly)
   const freshDoc = await db.collection('users').doc(user.uid).get();
   if (freshDoc.exists) {
     currentUserLinkedMember = freshDoc.data().linkedMember || null;
   }
+
+  // Load private workspace data (todos, notes)
+  await loadMyData();
+
+  // Load data from Firestore (real-time) — this calls renderAll() inside onSnapshot
+  startRealtimeSync();
 });
 
 function updateUserHeader() {
@@ -1568,7 +1578,8 @@ function getLinkedMember(){
 let currentUserLinkedMember=null; // set after auth
 
 function renderMySpace(){
-  const panel=document.querySelector('.ms-panel.active');
+  // find active sub-panel
+  const panel=document.querySelector('#view-myspace .ms-panel.active');
   if(!panel)return;
   const pid=panel.id.replace('ms-','');
   if(pid==='todo')renderMyTodo();
@@ -1638,14 +1649,17 @@ function renderMyTodo(){
   const addBtn=document.getElementById('todo-new-btn');
   const addInp=document.getElementById('todo-new-input');
   if(addBtn&&addInp){
-    addBtn.onclick=()=>{
+    const doAdd=()=>{
       const txt=addInp.value.trim();
       if(!txt)return;
       myTodos.push({id:Date.now(),text:txt,done:false});
       addInp.value='';
-      saveMyData();renderMyTodo();
+      saveMyData();
+      renderMyTodo();
     };
-    addInp.onkeydown=e=>{if(e.key==='Enter')addBtn.click();};
+    addBtn.onclick=doAdd;
+    addInp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();doAdd();}};
+    addInp.focus();
   }
 }
 
@@ -1815,10 +1829,17 @@ function renderMyNotes(){
 
 // ── SAVE/LOAD PRIVATE DATA ──
 async function saveMyData(){
-  if(!currentUser)return;
+  if(!currentUser){console.warn('saveMyData: no user');return;}
   try{
-    await db.collection('private').doc(currentUser.uid).set({todos:myTodos,notes:myNotes,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
-  }catch(e){console.error('Private save error:',e);}
+    await db.collection('private').doc(currentUser.uid).set({
+      todos:myTodos,
+      notes:myNotes,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }catch(e){
+    console.error('Private save error:',e);
+    toast('Could not save — check connection');
+  }
 }
 async function loadMyData(){
   if(!currentUser)return;

@@ -296,6 +296,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 .leg{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--tx3);font-family:var(--mono);letter-spacing:.04em}
 .leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
 .leg-tip{margin-left:auto;font-size:10px;color:var(--tx3);font-family:var(--mono)}
+.cal-tog{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:4px 10px;border-radius:4px;border:none;background:transparent;color:var(--tx3);cursor:pointer;font-family:var(--mono);transition:all .15s}
+.cal-tog.active{background:var(--surface);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.cal-tog:hover:not(.active){color:var(--tx)}
 .toast{position:fixed;bottom:20px;right:20px;background:var(--raised);border:1px solid var(--bd3);color:var(--tx);font-size:12px;font-weight:500;padding:10px 16px;border-radius:8px;z-index:300;opacity:0;transform:translateY(6px);transition:all .22s;pointer-events:none;font-family:var(--mono);letter-spacing:.04em;box-shadow:var(--sh)}
 .toast.show{opacity:1;transform:translateY(0)}
 @media(max-width:900px){.hdr,.toolbar,.legend{padding-left:12px;padding-right:12px}.jobs-scroll,.team-scroll,.cal-outer{padding:10px 12px}.tab{padding:5px 10px;font-size:11px}.period{min-width:110px;font-size:13px}}
@@ -389,8 +392,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
       <span class="period" id="cal-month"></span>
       <button class="nav-btn" id="cal-next"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
       <button class="btn" id="cal-today">Today</button>
-      <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx3);font-family:var(--mono);cursor:pointer"><input type="checkbox" id="cal-jobs" checked style="accent-color:var(--ip-fg)"> Jobs</label>
-      <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx3);font-family:var(--mono);cursor:pointer"><input type="checkbox" id="cal-events" checked style="accent-color:var(--rv-fg)"> Events</label>
+      <div style="display:flex;align-items:center;gap:4px;background:var(--raised);border-radius:6px;padding:3px;border:1px solid var(--bd)">
+        <button class="cal-tog active" id="cal-tog-proj" data-tog="proj" title="Show Projects">Projects</button>
+        <button class="cal-tog active" id="cal-tog-jobs" data-tog="jobs" title="Show Jobs">Jobs</button>
+        <button class="cal-tog active" id="cal-tog-evts" data-tog="evts" title="Show Events">Events</button>
+      </div>
       <div class="zoom-wrap">
         <button class="z-btn" id="cal-zo">−</button>
         <span class="z-lbl" id="cal-zl">1×</span>
@@ -762,12 +768,18 @@ document.getElementById('tl-add').addEventListener('click',openAddProj);
 document.getElementById('cal-prev').addEventListener('click',()=>{vm--;if(vm<0){vm=11;vy--;}save();renderAll();});
 document.getElementById('cal-next').addEventListener('click',()=>{vm++;if(vm>11){vm=0;vy++;}save();renderAll();});
 document.getElementById('cal-today').addEventListener('click',()=>{const n=now_();vy=n.getFullYear();vm=n.getMonth();save();renderAll();});
-document.getElementById('cal-jobs').addEventListener('change',renderCalendar);
-document.getElementById('cal-events').addEventListener('change',renderCalendar);
+// Calendar toggle buttons
+document.querySelectorAll('.cal-tog').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.classList.toggle('active');
+    renderCalendar();
+  });
+});
 function renderCalendar(){
   const days=dim(vy,vm),first=dow(vy,vm,1),now=now_();
-  const showJobs=document.getElementById('cal-jobs').checked;
-  const showEvents=document.getElementById('cal-events').checked;
+  const showProj=document.getElementById('cal-tog-proj')?.classList.contains('active')!==false;
+  const showJobs=document.getElementById('cal-tog-jobs')?.classList.contains('active')!==false;
+  const showEvents=document.getElementById('cal-tog-evts')?.classList.contains('active')!==false;
   const filterPr=vv('cal-fpr');
   const cellH=Math.round(95*CAL_ZOOMS[calZoomIdx]);
   let h=DN7.map((d,i)=>`<div class="cal-dh${i===0||i===6?' wkh':''}">${d}</div>`).join('');
@@ -782,7 +794,7 @@ function renderCalendar(){
     if(inM&&dt){
       h+=`<div class="cal-num${isT?' tn':''}">${d}</div>`;
       const items=[];
-      visPr.filter(p=>dateInRange(dt,p.start,p.end)).forEach(p=>items.push({label:p.name,col:p.color||sc(p.status),type:'proj',id:p.id,isEvent:false}));
+      if(showProj)visPr.filter(p=>dateInRange(dt,p.start,p.end)).forEach(p=>items.push({label:p.name,col:p.color||sc(p.status),type:'proj',id:p.id,isEvent:false}));
       if(showJobs)jobs.filter(j=>(!filterPr||String(j.pid)===filterPr)&&dateInRange(dt,j.start,j.end)).forEach(j=>items.push({label:j.name,col:sc(j.status),type:'job',id:j.id,isEvent:false}));
       if(showEvents)events.filter(ev=>dateInRange(dt,ev.start,ev.end||ev.start)).forEach(ev=>{const etc=EVENT_TYPES[ev.type]||EVENT_TYPES['Other'];items.push({label:`${etc.icon} ${ev.name}${ev.members&&ev.members.length?' · '+ev.members.join(', '):''}`,col:etc.color,type:'event',id:ev.id,isEvent:true});});
       const maxShow=Math.max(2,Math.floor(cellH/22)-2);
@@ -884,6 +896,8 @@ function renderJobs(){
         if(fo)phJobs=phJobs.filter(j=>(j.assignees||[]).includes(fo));
         if(fs)phJobs=phJobs.filter(j=>j.status===fs);
         if(fp)phJobs=phJobs.filter(j=>j.priority===fp);
+        // Hide entire phase if no matching jobs when filter active
+        if((fo||fs||fp)&&phJobs.length===0)continue;
         h+=`<div class="phase-jblock"><div class="phase-jhdr" data-toggle="ph-${ph.id}">
           <span class="phase-jname">${ph.name}</span>
           <span style="font-size:10px;color:var(--tx3);font-family:var(--mono)">${phJobs.length} job${phJobs.length!==1?'s':''}</span>

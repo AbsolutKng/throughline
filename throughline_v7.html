@@ -618,8 +618,9 @@ document.getElementById('cal-zi').addEventListener('click',()=>{if(calZoomIdx<CA
 document.getElementById('cal-zo').addEventListener('click',()=>{if(calZoomIdx>0){calZoomIdx--;updateZL();save();renderCalendar();}});
 document.getElementById('cal-zr').addEventListener('click',()=>{calZoomIdx=CAL_DEF;updateZL();save();renderCalendar();});
 // TABS
-document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',()=>{activeTab=t.dataset.tab;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');['timeline','calendar','jobs','team'].forEach(id=>document.getElementById('view-'+id).classList.toggle('active',id===activeTab));renderAll();});});
-function renderAll(){document.getElementById('tl-month').textContent=MN[vm]+' '+vy;document.getElementById('cal-month').textContent=MN[vm]+' '+vy;populateFilters();renderTimeline();renderCalendar();renderJobs();renderTeam();}
+document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',()=>{activeTab=t.dataset.tab;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');['timeline','calendar','jobs','team','myspace'].forEach(id=>document.getElementById('view-'+id).classList.toggle('active',id===activeTab));if(activeTab==='myspace')renderMySpace();else renderAll();});});
+document.querySelectorAll('[data-mstab]').forEach(t=>{t.addEventListener('click',()=>{document.querySelectorAll('[data-mstab]').forEach(x=>{x.style.color='var(--tx2)';x.style.borderBottom='2px solid transparent';});t.style.color='var(--tx)';t.style.borderBottom='2px solid var(--ip-fg)';['todo','timeline','calendar','notes'].forEach(p=>{const el=document.getElementById('ms-'+p);if(el)el.style.display=p===t.dataset.mstab?'block':'none';});renderMySpace();});});
+function renderAll(){document.getElementById('tl-month').textContent=MN[vm]+' '+vy;document.getElementById('cal-month').textContent=MN[vm]+' '+vy;populateFilters();renderTimeline();renderCalendar();renderJobs();renderTeam();if(activeTab==='myspace')renderMySpace();}
 // ALERTS
 function buildAlerts(){
   if(alertDis)return;
